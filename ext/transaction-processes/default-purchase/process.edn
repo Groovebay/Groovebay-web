@@ -13,6 +13,15 @@
     {:name :action/privileged-set-line-items}
     {:name :action/stripe-create-payment-intent}],
    :to :state/pending-payment}
+  {:name :transition/request-push-payment,
+   :actor :actor.role/customer,
+   :privileged? true,
+   :actions
+   [{:name :action/update-protected-data}
+    {:name :action/create-pending-stock-reservation}
+    {:name :action/privileged-set-line-items}
+    {:name :action/stripe-create-payment-intent-push}],
+   :to :state/pending-payment} 
   {:name :transition/request-payment-after-inquiry,
    :actor :actor.role/customer,
    :privileged? true,
@@ -23,6 +32,16 @@
     {:name :action/stripe-create-payment-intent}],
    :from :state/inquiry,
    :to :state/pending-payment}
+  {:name :transition/request-push-payment-after-inquiry,
+   :actor :actor.role/customer,
+   :privileged? true,
+   :actions
+   [{:name :action/update-protected-data}
+    {:name :action/create-pending-stock-reservation}
+    {:name :action/privileged-set-line-items}
+    {:name :action/stripe-create-payment-intent-push}],
+   :from :state/inquiry,
+   :to :state/pending-payment} 
   {:name :transition/confirm-payment,
    :actor :actor.role/customer,
    :actions
@@ -31,6 +50,14 @@
     {:name :action/stripe-capture-payment-intent}],
    :from :state/pending-payment,
    :to :state/purchased}
+  {:name :transition/confirm-push-payment,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/accept-stock-reservation}
+    {:name :action/stripe-confirm-payment-intent}
+    {:name :action/stripe-capture-payment-intent}],
+   :from :state/pending-payment,
+   :to :state/purchased}  
   {:name :transition/expire-payment,
    :at
    {:fn/plus
@@ -213,6 +240,22 @@
    :on :transition/mark-delivered,
    :to :actor.role/customer,
    :template :purchase-order-marked-as-delivered}
+  {:name :notification/order-receipt-push,
+   :on :transition/confirm-push-payment,
+   :to :actor.role/customer,
+   :template :purchase-order-receipt}
+  {:name :notification/purchase-new-order-push,
+   :on :transition/confirm-push-payment,
+   :to :actor.role/provider,
+   :template :purchase-new-order}
+  {:name :notification/shipping-reminder-push,
+   :on :transition/confirm-push-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/purchased]}
+     {:fn/period ["P3D"]}]},
+   :to :actor.role/provider,
+   :template :purchase-shipping-reminder}  
   {:name
    :notification/purchase-order-operator-marked-as-delivered-to-customer,
    :on :transition/operator-mark-delivered,

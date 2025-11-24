@@ -18,16 +18,19 @@ export const transitions = {
   // At this transition a PaymentIntent is created by Marketplace API.
   // After this transition, the actual payment must be made on client-side directly to Stripe.
   REQUEST_PAYMENT: 'transition/request-payment',
+  REQUEST_PUSH_PAYMENT: 'transition/request-push-payment',
 
   // A customer can also initiate a transaction with an inquiry, and
   // then transition that with a request.
   INQUIRE: 'transition/inquire',
   REQUEST_PAYMENT_AFTER_INQUIRY: 'transition/request-payment-after-inquiry',
+  REQUEST_PUSH_PAYMENT_AFTER_INQUIRY: 'transition/request-push-payment-after-inquiry',
 
   // Stripe SDK might need to ask 3D security from customer, in a separate front-end step.
   // Therefore we need to make another transition to Marketplace API,
   // to tell that the payment is confirmed.
   CONFIRM_PAYMENT: 'transition/confirm-payment',
+  CONFIRM_PUSH_PAYMENT: 'transition/confirm-push-payment',
 
   // If the payment is not confirmed in the time limit set in transaction process (by default 15min)
   // the transaction will expire automatically.
@@ -132,11 +135,13 @@ export const graph = {
       on: {
         [transitions.INQUIRE]: states.INQUIRY,
         [transitions.REQUEST_PAYMENT]: states.PENDING_PAYMENT,
+        [transitions.REQUEST_PUSH_PAYMENT]: states.PENDING_PAYMENT,
       },
     },
     [states.INQUIRY]: {
       on: {
         [transitions.REQUEST_PAYMENT_AFTER_INQUIRY]: states.PENDING_PAYMENT,
+        [transitions.REQUEST_PUSH_PAYMENT_AFTER_INQUIRY]: states.PENDING_PAYMENT,
       },
     },
 
@@ -144,6 +149,7 @@ export const graph = {
       on: {
         [transitions.EXPIRE_PAYMENT]: states.PAYMENT_EXPIRED,
         [transitions.CONFIRM_PAYMENT]: states.PURCHASED,
+        [transitions.CONFIRM_PUSH_PAYMENT]: states.PURCHASED,
       },
     },
 
@@ -213,6 +219,7 @@ export const graph = {
 export const isRelevantPastTransition = transition => {
   return [
     transitions.CONFIRM_PAYMENT,
+    transitions.CONFIRM_PUSH_PAYMENT,
     transitions.AUTO_CANCEL,
     transitions.CANCEL,
     transitions.MARK_DELIVERED,
@@ -243,9 +250,12 @@ export const isProviderReview = transition => {
 // should go through the local API endpoints, or if using JS SDK is
 // enough.
 export const isPrivileged = transition => {
-  return [transitions.REQUEST_PAYMENT, transitions.REQUEST_PAYMENT_AFTER_INQUIRY].includes(
-    transition
-  );
+  return [
+    transitions.REQUEST_PAYMENT,
+    transitions.REQUEST_PAYMENT_AFTER_INQUIRY,
+    transitions.REQUEST_PUSH_PAYMENT,
+    transitions.REQUEST_PUSH_PAYMENT_AFTER_INQUIRY,
+  ].includes(transition);
 };
 
 // Check when transaction is completed (item is received and review notifications sent)
