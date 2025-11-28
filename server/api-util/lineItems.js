@@ -106,36 +106,7 @@ const getDateRangeQuantityAndLineItems = (orderData, code) => {
   return hasSeats ? { units, seats, extraLineItems: [] } : { quantity: units, extraLineItems: [] };
 };
 
-/**
- * Returns collection of lineItems (max 50)
- *
- * All the line-items dedicated to _customer_ define the "payin total".
- * Similarly, the sum of all the line-items included for _provider_ create "payout total".
- * Platform gets the commission, which is the difference between payin and payout totals.
- *
- * Each line items has following fields:
- * - `code`: string, mandatory, indentifies line item type (e.g. \"line-item/cleaning-fee\"), maximum length 64 characters.
- * - `unitPrice`: money, mandatory
- * - `lineTotal`: money
- * - `quantity`: number
- * - `percentage`: number (e.g. 15.5 for 15.5%)
- * - `seats`: number
- * - `units`: number
- * - `includeFor`: array containing strings \"customer\" or \"provider\", default [\":customer\"  \":provider\" ]
- *
- * Line item must have either `quantity` or `percentage` or both `seats` and `units`.
- *
- * `includeFor` defines commissions. Customer commission is added by defining `includeFor` array `["customer"]` and provider commission by `["provider"]`.
- *
- * @param {Object} listing
- * @param {Object} orderData
- * @param {string} [orderData.priceVariantName] - The name of the price variant (potentially used with bookable unit types)
- * @param {Money} [orderData.offer] - The offer for the offer (if transition intent is "make-offer")
- * @param {Object} providerCommission
- * @param {Object} customerCommission
- * @returns {Array} lineItems
- */
-exports.transactionLineItems = (listing, orderData, providerCommission, customerCommission) => {
+const getDefaultLineItems = (listing, orderData, providerCommission, customerCommission) => {
   const publicData = listing.attributes.publicData;
   // Note: the unitType needs to be one of the following:
   // day, night, hour, fixed, or item (these are related to payment processes)
@@ -232,9 +203,104 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
   const lineItems = [
     order,
     ...extraLineItems,
-    ...getProviderCommissionMaybe(providerCommission, order, currency),
-    ...getCustomerCommissionMaybe(customerCommission, order, currency),
+    ...getProviderCommissionMaybe(providerCommission, [order], currency),
+    ...getCustomerCommissionMaybe(customerCommission, [order], currency),
   ];
 
   return lineItems;
+};
+
+const getProviderCartLineItems = (
+  listings,
+  providerCart,
+  providerCommission,
+  customerCommission
+) => {
+  const currency = listings?.[0]?.attributes?.price?.currency;
+
+  const listingLineItems = listings.map(listing => {
+    const quantity = providerCart[listing.id.uuid].quantity;
+
+    const unitPrice = listing.attributes.price;
+
+    const lineItem = {
+      code: `line-item/item-${listing.id.uuid}`,
+      unitPrice,
+      quantity,
+      includeFor: ['customer', 'provider'],
+    };
+    return lineItem;
+  });
+
+  const listingHasShipping = listings.find(
+    listing => typeof listing.attributes.publicData.shippingPriceInSubunitsOneItem === 'number'
+  );
+  const shippingLineItems = [];
+  const totalQuantity = Object.values(providerCart).reduce((acc, curr) => acc + curr.quantity, 0);
+  if (listingHasShipping) {
+    const {
+      shippingPriceInSubunitsOneItem,
+      shippingPriceInSubunitsAdditionalItems,
+    } = listingHasShipping.attributes.publicData;
+    const shippingFee = calculateShippingFee(
+      shippingPriceInSubunitsOneItem,
+      shippingPriceInSubunitsAdditionalItems,
+      currency,
+      totalQuantity
+    );
+    shippingLineItems.push({
+      code: 'line-item/shipping-fee',
+      unitPrice: shippingFee,
+      quantity: 1,
+      includeFor: ['customer', 'provider'],
+    });
+  }
+  return [
+    ...listingLineItems,
+    ...getProviderCommissionMaybe(providerCommission, listingLineItems, currency),
+    ...getCustomerCommissionMaybe(customerCommission, listingLineItems, currency),
+    ...shippingLineItems,
+  ];
+};
+
+/**
+ * Returns collection of lineItems (max 50)
+ *
+ * All the line-items dedicated to _customer_ define the "payin total".
+ * Similarly, the sum of all the line-items included for _provider_ create "payout total".
+ * Platform gets the commission, which is the difference between payin and payout totals.
+ *
+ * Each line items has following fields:
+ * - `code`: string, mandatory, indentifies line item type (e.g. \"line-item/cleaning-fee\"), maximum length 64 characters.
+ * - `unitPrice`: money, mandatory
+ * - `lineTotal`: money
+ * - `quantity`: number
+ * - `percentage`: number (e.g. 15.5 for 15.5%)
+ * - `seats`: number
+ * - `units`: number
+ * - `includeFor`: array containing strings \"customer\" or \"provider\", default [\":customer\"  \":provider\" ]
+ *
+ * Line item must have either `quantity` or `percentage` or both `seats` and `units`.
+ *
+ * `includeFor` defines commissions. Customer commission is added by defining `includeFor` array `["customer"]` and provider commission by `["provider"]`.
+ *
+ * @param {Object} listing
+ * @param {Object} orderData
+ * @param {string} [orderData.priceVariantName] - The name of the price variant (potentially used with bookable unit types)
+ * @param {Money} [orderData.offer] - The offer for the offer (if transition intent is "make-offer")
+ * @param {Object} [orderData.providerCart] - The provider cart
+ * @param {Object} providerCommission
+ * @param {Object} customerCommission
+ * @returns {Array} lineItems
+ */
+exports.transactionLineItems = (listings, orderData, providerCommission, customerCommission) => {
+  if (orderData.providerCart) {
+    return getProviderCartLineItems(
+      listings,
+      orderData.providerCart,
+      providerCommission,
+      customerCommission
+    );
+  }
+  return getDefaultLineItems(listings?.[0], orderData, providerCommission, customerCommission);
 };

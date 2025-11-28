@@ -395,6 +395,11 @@ export const TransactionPageComponent = props => {
     const seats = Number.parseInt(seatsRaw, 10);
     const seatsMaybe = Number.isInteger(seats) ? { seats } : {};
     const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
+    const providerCart = {
+      [listing.id.uuid]: {
+        quantity: quantityMaybe.quantity ?? 1,
+      },
+    };
 
     const initialValues = {
       listing,
@@ -407,6 +412,7 @@ export const TransactionPageComponent = props => {
         ...seatsMaybe,
         ...deliveryMethodMaybe,
         ...otherOrderData,
+        providerCart,
       },
       confirmPaymentError: null,
     };

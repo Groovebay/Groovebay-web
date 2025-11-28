@@ -14,6 +14,7 @@ import {
   PrimaryButton,
   H3,
   H6,
+  SecondaryButton,
 } from '../../../components';
 
 import EstimatedCustomerBreakdownMaybe from '../EstimatedCustomerBreakdownMaybe';
@@ -21,6 +22,7 @@ import EstimatedCustomerBreakdownMaybe from '../EstimatedCustomerBreakdownMaybe'
 import FetchLineItemsError from '../FetchLineItemsError/FetchLineItemsError.js';
 
 import css from './ProductOrderForm.module.css';
+import isEqual from 'lodash/isEqual';
 
 // Browsers can't render huge number of select options.
 // (stock is shown inside select element)
@@ -39,6 +41,11 @@ const handleFetchLineItems = ({
   const stockReservationQuantity = Number.parseInt(quantity, 10);
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
   const isBrowser = typeof window !== 'undefined';
+  const providerCart = {
+    [listingId.uuid]: {
+      quantity: stockReservationQuantity,
+    },
+  };
   if (
     isBrowser &&
     stockReservationQuantity &&
@@ -46,7 +53,7 @@ const handleFetchLineItems = ({
     !fetchLineItemsInProgress
   ) {
     onFetchTransactionLineItems({
-      orderData: { stockReservationQuantity, ...deliveryMethodMaybe },
+      orderData: { stockReservationQuantity, ...deliveryMethodMaybe, providerCart },
       listingId,
       isOwnListing,
     });
@@ -111,6 +118,7 @@ const DeliveryMethodMaybe = props => {
 
 const renderForm = formRenderProps => {
   const [mounted, setMounted] = useState(false);
+  const [submittedValues, setSubmittedValues] = useState({});
   const {
     // FormRenderProps from final-form
     handleSubmit,
@@ -134,6 +142,9 @@ const renderForm = formRenderProps => {
     payoutDetailsWarning,
     marketplaceName,
     values,
+    updateCart,
+    alreadyInCart,
+    updateCartInProgress,
   } = formRenderProps;
 
   // Note: don't add custom logic before useEffect
@@ -219,6 +230,8 @@ const renderForm = formRenderProps => {
   const submitInProgress = fetchLineItemsInProgress;
   const submitDisabled = !hasStock;
 
+  const cartReady = isEqual(submittedValues, values);
+
   return (
     <Form onSubmit={handleFormSubmit}>
       <FormSpy subscription={{ values: true }} onChange={handleOnChange} />
@@ -278,13 +291,31 @@ const renderForm = formRenderProps => {
       <FetchLineItemsError error={fetchLineItemsError} />
 
       <div className={css.submitButton}>
-        <PrimaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
+        <PrimaryButton
+          type="button"
+          inProgress={updateCartInProgress}
+          disabled={updateCartInProgress}
+          onClick={() => {
+            setSubmittedValues({ ...values, quantity: Number(values.quantity) });
+            updateCart({ ...values, quantity: Number(values.quantity) });
+          }}
+          ready={cartReady}
+        >
+          {alreadyInCart && values.quantity === 0 ? (
+            <FormattedMessage id="ProductOrderForm.removeFromCart" />
+          ) : alreadyInCart ? (
+            <FormattedMessage id="ProductOrderForm.updateCart" />
+          ) : (
+            <FormattedMessage id="ProductOrderForm.addToCart" />
+          )}
+        </PrimaryButton>
+        <SecondaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
           {hasStock ? (
             <FormattedMessage id="ProductOrderForm.ctaButton" />
           ) : (
             <FormattedMessage id="ProductOrderForm.ctaButtonNoStock" />
           )}
-        </PrimaryButton>
+        </SecondaryButton>
       </div>
       <p className={css.finePrint}>
         {payoutDetailsWarning ? (
@@ -334,6 +365,7 @@ const ProductOrderForm = props => {
     shippingEnabled,
     displayDeliveryMethod,
     allowOrdersOfMultipleItems,
+    currentListingQuantityInCart,
   } = props;
 
   // Should not happen for listings that go through EditListingWizard.
@@ -348,7 +380,10 @@ const ProductOrderForm = props => {
 
   const hasOneItemLeft = currentStock && currentStock === 1;
   const hasOneItemMode = !allowOrdersOfMultipleItems && currentStock > 0;
-  const quantityMaybe = hasOneItemLeft || hasOneItemMode ? { quantity: '1' } : {};
+  const quantityMaybe =
+    hasOneItemLeft || hasOneItemMode
+      ? { quantity: currentListingQuantityInCart > 0 ? currentListingQuantityInCart : '1' }
+      : { quantity: currentListingQuantityInCart };
   const deliveryMethodMaybe =
     shippingEnabled && !pickupEnabled
       ? { deliveryMethod: 'shipping' }

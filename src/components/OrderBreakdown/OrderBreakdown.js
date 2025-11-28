@@ -44,6 +44,7 @@ export const OrderBreakdownComponent = props => {
     currency,
     marketplaceName,
     intl,
+    showMultipleListingLineItems,
   } = props;
 
   const isCustomer = userRole === 'customer';
@@ -104,6 +105,10 @@ export const OrderBreakdownComponent = props => {
    *
    */
 
+  const unknownLineItems = showMultipleListingLineItems
+    ? lineItems
+    : lineItems.filter(lineItem => !lineItem.code.startsWith('line-item/item-'));
+
   return (
     <div className={classes}>
       <LineItemBookingPeriod
@@ -116,7 +121,7 @@ export const OrderBreakdownComponent = props => {
       <LineItemBasePriceMaybe lineItems={lineItems} code={lineItemUnitType} intl={intl} />
       <LineItemShippingFeeMaybe lineItems={lineItems} intl={intl} />
       <LineItemPickupFeeMaybe lineItems={lineItems} intl={intl} />
-      <LineItemUnknownItemsMaybe lineItems={lineItems} isProvider={isProvider} intl={intl} />
+      <LineItemUnknownItemsMaybe lineItems={unknownLineItems} isProvider={isProvider} intl={intl} />
 
       <LineItemSubTotalMaybe
         lineItems={lineItems}

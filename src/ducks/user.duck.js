@@ -12,6 +12,11 @@ import {
 
 import { authInfo } from './auth.duck';
 import { updateStripeConnectAccount } from './stripeConnectAccount.duck';
+import { loadCartFromLocalStorage, setCart } from './cart.duck';
+
+export const UPDATE_CURRENT_USER_PROFILE_REQUEST = 'app/user/UPDATE_CURRENT_USER_PROFILE_REQUEST';
+export const UPDATE_CURRENT_USER_PROFILE_SUCCESS = 'app/user/UPDATE_CURRENT_USER_PROFILE_SUCCESS';
+export const UPDATE_CURRENT_USER_PROFILE_ERROR = 'app/user/UPDATE_CURRENT_USER_PROFILE_ERROR';
 
 // ================ Helper Functions ================ //
 
@@ -173,6 +178,11 @@ const fetchCurrentUserPayloadCreator = (options, thunkAPI) => {
     return Promise.resolve(state.user.currentUser);
   }
 
+  if (!isAuthenticated && typeof window !== 'undefined') {
+    // Cart loading is now handled by the cart duck
+    dispatch(loadCartFromLocalStorage());
+  }
+
   if (!isAuthenticated && !afterLogin) {
     // Make sure current user is null
     return Promise.resolve(null);
@@ -210,6 +220,10 @@ const fetchCurrentUserPayloadCreator = (options, thunkAPI) => {
       // Save stripeAccount to store.stripe.stripeAccount if it exists
       if (currentUser.stripeAccount) {
         dispatch(updateStripeConnectAccount(currentUser.stripeAccount));
+      }
+
+      if (currentUser.attributes.profile?.privateData?.cart) {
+        dispatch(setCart({ ...currentUser.attributes.profile.privateData.cart }));
       }
 
       // set current user id to the logger
@@ -284,6 +298,28 @@ export const sendVerificationEmailThunk = createAsyncThunk(
   }
 );
 
+export const updateCurrentUserProfilePayloadCreator = (
+  data,
+  { dispatch, extra: sdk, rejectWithValue }
+) => {
+  return sdk.currentUser
+    .updateProfile(data.data, data.options)
+    .then(response => {
+      const entities = denormalisedResponseEntities(response);
+      if (entities.length !== 1) {
+        throw new Error('Expected a resource in the sdk.currentUser.updateProfile response');
+      }
+      dispatch(setCurrentUser(entities[0]));
+      return response;
+    })
+    .catch(e => rejectWithValue(storableError(e)));
+};
+
+export const updateCurrentUserProfileThunk = createAsyncThunk(
+  'user/updateCurrentUserProfile',
+  updateCurrentUserProfilePayloadCreator
+);
+
 // Backward compatible wrapper for the thunk
 export const sendVerificationEmail = () => (dispatch, getState, sdk) => {
   return dispatch(sendVerificationEmailThunk()).unwrap();
@@ -306,6 +342,10 @@ const userSlice = createSlice({
     currentUserHasOrdersError: null,
     sendVerificationEmailInProgress: false,
     sendVerificationEmailError: null,
+
+    updateCurrentUserProfileInProgress: false,
+    updateCurrentUserProfileError: null,
+    updateCurrentUserProfileSuccess: false,
   },
   reducers: {
     clearCurrentUser: state => {
@@ -385,6 +425,18 @@ const userSlice = createSlice({
       .addCase(sendVerificationEmailThunk.rejected, (state, action) => {
         state.sendVerificationEmailInProgress = false;
         state.sendVerificationEmailError = action.payload;
+      })
+      .addCase(updateCurrentUserProfileThunk.pending, state => {
+        state.updateCurrentUserProfileInProgress = true;
+        state.updateCurrentUserProfileError = null;
+      })
+      .addCase(updateCurrentUserProfileThunk.fulfilled, state => {
+        state.updateCurrentUserProfileInProgress = false;
+        state.updateCurrentUserProfileSuccess = true;
+      })
+      .addCase(updateCurrentUserProfileThunk.rejected, (state, action) => {
+        state.updateCurrentUserProfileInProgress = false;
+        state.updateCurrentUserProfileError = action.payload;
       });
   },
 });

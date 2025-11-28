@@ -279,13 +279,22 @@ export const ListingPageComponent = props => {
     ...commonParams,
     getListing,
   });
-  const onSubmit = handleSubmit({
-    ...commonParams,
-    currentUser,
-    callSetInitialValues,
-    getListing,
-    onInitializeCardPaymentData,
-  });
+  const onSubmit = values => {
+    return handleSubmit({
+      ...commonParams,
+      currentUser,
+      callSetInitialValues,
+      getListing,
+      onInitializeCardPaymentData,
+    })({
+      ...values,
+      providerCart: {
+        [listingId.uuid]: {
+          quantity: values.quantity ?? 1,
+        },
+      },
+    });
+  };
 
   const handleOrderSubmit = values => {
     const isCurrentlyClosed = currentListing.attributes.state === LISTING_STATE_CLOSED;

@@ -22,7 +22,7 @@ import css from './StripePaymentAddress.module.css';
  * @returns {JSX.Element}
  */
 const StripePaymentAddress = props => {
-  const { className, intl, disabled, form, fieldId, card, locale } = props;
+  const { className, intl, disabled, form, fieldId, card, locale, disableValidation } = props;
 
   const optionalText = intl.formatMessage({
     id: 'StripePaymentAddress.optionalText',
@@ -34,11 +34,13 @@ const StripePaymentAddress = props => {
   const addressLine1Placeholder = intl.formatMessage({
     id: 'StripePaymentAddress.addressLine1Placeholder',
   });
-  const addressLine1Required = validators.required(
-    intl.formatMessage({
-      id: 'StripePaymentAddress.addressLine1Required',
-    })
-  );
+  const addressLine1Required = disableValidation
+    ? undefined
+    : validators.required(
+        intl.formatMessage({
+          id: 'StripePaymentAddress.addressLine1Required',
+        })
+      );
 
   const addressLine2Label = intl.formatMessage(
     { id: 'StripePaymentAddress.addressLine2Label' },
@@ -53,19 +55,23 @@ const StripePaymentAddress = props => {
   const postalCodePlaceholder = intl.formatMessage({
     id: 'StripePaymentAddress.postalCodePlaceholder',
   });
-  const postalCodeRequired = validators.required(
-    intl.formatMessage({
-      id: 'StripePaymentAddress.postalCodeRequired',
-    })
-  );
+  const postalCodeRequired = disableValidation
+    ? undefined
+    : validators.required(
+        intl.formatMessage({
+          id: 'StripePaymentAddress.postalCodeRequired',
+        })
+      );
 
   const cityLabel = intl.formatMessage({ id: 'StripePaymentAddress.cityLabel' });
   const cityPlaceholder = intl.formatMessage({ id: 'StripePaymentAddress.cityPlaceholder' });
-  const cityRequired = validators.required(
-    intl.formatMessage({
-      id: 'StripePaymentAddress.cityRequired',
-    })
-  );
+  const cityRequired = disableValidation
+    ? undefined
+    : validators.required(
+        intl.formatMessage({
+          id: 'StripePaymentAddress.cityRequired',
+        })
+      );
 
   const stateLabel = intl.formatMessage(
     { id: 'StripePaymentAddress.stateLabel' },
@@ -75,11 +81,13 @@ const StripePaymentAddress = props => {
 
   const countryLabel = intl.formatMessage({ id: 'StripePaymentAddress.countryLabel' });
   const countryPlaceholder = intl.formatMessage({ id: 'StripePaymentAddress.countryPlaceholder' });
-  const countryRequired = validators.required(
-    intl.formatMessage({
-      id: 'StripePaymentAddress.countryRequired',
-    })
-  );
+  const countryRequired = disableValidation
+    ? undefined
+    : validators.required(
+        intl.formatMessage({
+          id: 'StripePaymentAddress.countryRequired',
+        })
+      );
 
   const handleOnChange = event => {
     const value = event.target.value;

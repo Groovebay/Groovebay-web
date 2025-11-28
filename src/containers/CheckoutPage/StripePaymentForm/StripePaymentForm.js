@@ -20,6 +20,7 @@ import {
   IconSpinner,
   SavedCardDetails,
   StripePaymentAddress,
+  FieldSelect,
 } from '../../../components';
 
 import ShippingDetails from '../ShippingDetails/ShippingDetails';
@@ -250,6 +251,7 @@ const initialState = {
   // The mode can be 'onetimePayment', 'defaultCard', or 'replaceCard'
   // Check SavedCardDetails component for more information
   paymentMethod: null,
+  idealBankValue: null,
 };
 
 /**
@@ -303,9 +305,11 @@ class StripePaymentForm extends Component {
     this.paymentForm = this.paymentForm.bind(this);
     this.initializeStripeElement = this.initializeStripeElement.bind(this);
     this.handleStripeElementRef = this.handleStripeElementRef.bind(this);
+    this.handleIdealBankElementRef = this.handleIdealBankElementRef.bind(this);
     this.changePaymentMethod = this.changePaymentMethod.bind(this);
     this.finalFormAPI = null;
     this.cardContainer = null;
+    this.idealBankContainer = null;
   }
 
   componentDidMount() {
@@ -336,6 +340,11 @@ class StripePaymentForm extends Component {
       this.card.unmount();
       this.card = null;
     }
+    if (this.idealBankElement) {
+      this.idealBankElement.removeEventListener('change', this.handleIdealBankValueChange);
+      this.idealBankElement.unmount();
+      this.idealBankElement = null;
+    }
   }
 
   initializeStripeElement(element) {
@@ -357,6 +366,57 @@ class StripePaymentForm extends Component {
       });
     }
   }
+
+  initializeIdealBankElement(element) {
+    if (!this.stripe) {
+      return;
+    }
+
+    const elements = this.stripe.elements(stripeElementsOptions);
+
+    if (!this.idealBankElement) {
+      this.idealBankElement = elements.create('idealBank', { style: cardStyles });
+      this.idealBankElement.mount(element || this.idealBankContainer);
+
+      // Listen to change event
+      this.idealBankElement.addEventListener('change', this.handleIdealBankValueChange);
+
+      // Also listen to ready event to ensure element is mounted
+      this.idealBankElement.addEventListener('ready', () => {
+        console.log('idealBank element ready');
+      });
+    }
+  }
+
+  handleIdealBankValueChange = event => {
+    console.log('idealBank change event:', event);
+    console.log('idealBank change event.value:', event.value);
+    console.log('idealBank change event.complete:', event.complete);
+
+    // The idealBank element's value structure can vary
+    // Try different possible structures
+    let bankValue = null;
+
+    if (event.value) {
+      // Structure might be: event.value.value (nested)
+      if (event.value.value) {
+        bankValue = event.value.value;
+      }
+      // Or structure might be: event.value (direct)
+      else if (typeof event.value === 'string') {
+        bankValue = event.value;
+      }
+      // Or structure might be: event.value.bic or event.value.bank
+      else if (event.value.bic) {
+        bankValue = event.value.bic;
+      } else if (event.value.bank) {
+        bankValue = event.value.bank;
+      }
+    }
+
+    console.log('idealBank value extracted:', bankValue);
+    this.setState({ idealBankValue: bankValue });
+  };
 
   updateBillingDetailsToMatchShippingAddress(shouldFill) {
     const formApi = this.finalFormAPI;
@@ -395,6 +455,13 @@ class StripePaymentForm extends Component {
     }
   }
 
+  handleIdealBankElementRef(el) {
+    this.idealBankContainer = el;
+    if (this.stripe && el) {
+      this.initializeIdealBankElement(el);
+    }
+  }
+
   handleCardValueChange(event) {
     const { intl } = this.props;
     const { error, complete } = event;
@@ -419,8 +486,8 @@ class StripePaymentForm extends Component {
       hasHandledCardPayment,
       defaultPaymentMethod,
     } = this.props;
-    const { initialMessage } = values;
-    const { cardValueValid, paymentMethod } = this.state;
+    const { initialMessage, paymentMethodType } = values;
+    const { cardValueValid, paymentMethod, idealBankValue } = this.state;
     const hasDefaultPaymentMethod = defaultPaymentMethod?.id;
     const selectedPaymentMethod = getPaymentMethod(paymentMethod, hasDefaultPaymentMethod);
     const { onetimePaymentNeedsAttention } = checkOnetimePaymentFields(
@@ -430,14 +497,64 @@ class StripePaymentForm extends Component {
       hasHandledCardPayment
     );
 
-    if (inProgress || onetimePaymentNeedsAttention) {
+    const isIdeal = paymentMethodType === 'ideal';
+    if (inProgress || (onetimePaymentNeedsAttention && !isIdeal)) {
       // Already submitting or card value incomplete/invalid
+      return;
+    }
+
+    // For iDEAL, try to get the bank value from the element directly if state doesn't have it
+    let finalIdealBankValue = idealBankValue;
+    if (isIdeal && this.idealBankElement && !finalIdealBankValue) {
+      try {
+        // Try different methods to get the value from the element
+        // Some Stripe elements have getValue(), others might store it differently
+        if (typeof this.idealBankElement.getValue === 'function') {
+          const elementValue = this.idealBankElement.getValue();
+          console.log('idealBank getValue() result:', elementValue);
+          finalIdealBankValue =
+            elementValue?.value || elementValue?.bic || elementValue?.bank || elementValue || null;
+        }
+        // If getValue doesn't exist, the element itself should work with confirmIdealPayment
+        // We'll pass the element directly and let Stripe handle it
+      } catch (err) {
+        console.error('Error getting idealBank value from element:', err);
+      }
+    }
+
+    // If we still don't have a value but have the element,
+    // we can still proceed - Stripe will extract the value from the element
+    // The element itself will be passed to confirmIdealPayment
+    if (isIdeal && !finalIdealBankValue && this.idealBankElement) {
+      // Check if element has a selected value by checking its internal state
+      // This is a fallback - ideally the change event should have fired
+      console.warn(
+        'idealBank value is null but element exists - element will be passed directly to Stripe'
+      );
+      // We'll allow submission since Stripe can extract the value from the element
+      // The element must exist for this to work
+    }
+
+    console.log({
+      idealBankValue,
+      finalIdealBankValue,
+      isIdeal,
+      hasElement: !!this.idealBankElement,
+    });
+
+    // For iDEAL, we need either the value OR the element itself
+    // If we have the element, Stripe will extract the bank selection from it
+    if (isIdeal && !finalIdealBankValue && !this.idealBankElement) {
+      // iDEAL requires bank selection - neither value nor element available
+      console.warn('iDEAL bank not selected and element not available');
       return;
     }
 
     const params = {
       message: initialMessage ? initialMessage.trim() : null,
       card: this.card,
+      idealBankElement: isIdeal ? this.idealBankElement : null,
+      idealBank: finalIdealBankValue,
       formId,
       formValues: values,
       paymentMethod: getPaymentMethod(
@@ -477,9 +594,23 @@ class StripePaymentForm extends Component {
       isBooking,
       isFuzzyLocation,
       values,
+      errors,
     } = formRenderProps;
 
     this.finalFormAPI = formApi;
+
+    const paymentMethodType = values.paymentMethodType;
+    const isIdeal = paymentMethodType === 'ideal';
+
+    // Mount/unmount idealBankElement based on payment method type
+    if (isIdeal && this.stripe && this.idealBankContainer && !this.idealBankElement) {
+      this.initializeIdealBankElement();
+    } else if (!isIdeal && this.idealBankElement) {
+      this.idealBankElement.removeEventListener('change', this.handleIdealBankValueChange);
+      this.idealBankElement.unmount();
+      this.idealBankElement = null;
+      this.setState({ idealBankValue: null });
+    }
 
     const ensuredDefaultPaymentMethod = ensurePaymentMethodCard(defaultPaymentMethod);
     const billingDetailsNeeded = !(hasHandledCardPayment || confirmPaymentError);
@@ -494,13 +625,16 @@ class StripePaymentForm extends Component {
       hasHandledCardPayment
     );
 
-    const submitDisabled = invalid || onetimePaymentNeedsAttention || submitInProgress;
+    const submitDisabled =
+      invalid || (onetimePaymentNeedsAttention && !isIdeal) || submitInProgress;
+
     const hasCardError = this.state.error && !submitInProgress;
     const hasPaymentErrors = confirmCardPaymentError || confirmPaymentError;
     const classes = classNames(rootClassName || css.root, className);
     const cardClasses = classNames(css.card, {
       [css.cardSuccess]: this.state.cardValueValid,
       [css.cardError]: hasCardError,
+      [css.idealCard]: isIdeal,
     });
 
     // Note: totalPrice might not be available initially
@@ -551,6 +685,7 @@ class StripePaymentForm extends Component {
         fieldId={formId}
         card={this.card}
         locale={locale}
+        disableValidation={isIdeal}
       />
     );
 
@@ -562,8 +697,94 @@ class StripePaymentForm extends Component {
     };
     const isBookingYesNo = isBooking ? 'yes' : 'no';
 
+    const cardContent =
+      billingDetailsNeeded && !loadingData ? (
+        <React.Fragment>
+          {hasDefaultPaymentMethod ? (
+            <PaymentMethodSelector
+              cardClasses={cardClasses}
+              formId={formId}
+              defaultPaymentMethod={ensuredDefaultPaymentMethod}
+              changePaymentMethod={this.changePaymentMethod}
+              handleStripeElementRef={this.handleStripeElementRef}
+              hasCardError={hasCardError}
+              error={this.state.error}
+              paymentMethod={selectedPaymentMethod}
+              intl={intl}
+              marketplaceName={marketplaceName}
+            />
+          ) : (
+            <React.Fragment>
+              <Heading as="h3" rootClassName={css.heading}>
+                <FormattedMessage id="StripePaymentForm.paymentHeading" />
+              </Heading>
+              <OneTimePaymentWithCardElement
+                cardClasses={cardClasses}
+                formId={formId}
+                handleStripeElementRef={this.handleStripeElementRef}
+                hasCardError={hasCardError}
+                error={this.state.error}
+                intl={intl}
+                marketplaceName={marketplaceName}
+              />
+            </React.Fragment>
+          )}
+
+          {showOnetimePaymentFields ? (
+            <div className={css.billingDetails}>
+              <Heading as="h3" rootClassName={css.heading}>
+                <FormattedMessage id="StripePaymentForm.billingDetails" />
+              </Heading>
+
+              {askShippingDetails ? (
+                <FieldCheckbox
+                  className={css.sameAddressCheckbox}
+                  textClassName={css.sameAddressLabel}
+                  id="sameAddressCheckbox"
+                  name="sameAddressCheckbox"
+                  label={intl.formatMessage({
+                    id: 'StripePaymentForm.sameBillingAndShippingAddress',
+                  })}
+                  value="sameAddress"
+                  useSuccessColor
+                  onChange={handleSameAddressCheckbox}
+                />
+              ) : null}
+
+              <FieldTextInput
+                className={css.field}
+                type="text"
+                id="name"
+                name="name"
+                autoComplete="cc-name"
+                label={billingDetailsNameLabel}
+                placeholder={billingDetailsNamePlaceholder}
+              />
+
+              {billingAddress}
+            </div>
+          ) : null}
+        </React.Fragment>
+      ) : loadingData ? (
+        <p className={css.spinner}>
+          <IconSpinner />
+        </p>
+      ) : null;
     return hasStripeKey ? (
       <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
+        <FieldSelect
+          className={css.paymentMethodTypeSelect}
+          id="paymentMethodType"
+          name="paymentMethodType"
+          label={intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeLabel' })}
+        >
+          <option value="card">
+            {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeCard' })}
+          </option>
+          <option value="ideal">
+            {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeIdeal' })}
+          </option>
+        </FieldSelect>
         <LocationOrShippingDetails
           askShippingDetails={askShippingDetails}
           showPickUpLocation={showPickUpLocation}
@@ -575,44 +796,24 @@ class StripePaymentForm extends Component {
           intl={intl}
         />
 
-        {billingDetailsNeeded && !loadingData ? (
-          <React.Fragment>
-            {hasDefaultPaymentMethod ? (
-              <PaymentMethodSelector
-                cardClasses={cardClasses}
-                formId={formId}
-                defaultPaymentMethod={ensuredDefaultPaymentMethod}
-                changePaymentMethod={this.changePaymentMethod}
-                handleStripeElementRef={this.handleStripeElementRef}
-                hasCardError={hasCardError}
-                error={this.state.error}
-                paymentMethod={selectedPaymentMethod}
-                intl={intl}
-                marketplaceName={marketplaceName}
-              />
-            ) : (
-              <React.Fragment>
-                <Heading as="h3" rootClassName={css.heading}>
-                  <FormattedMessage id="StripePaymentForm.paymentHeading" />
-                </Heading>
-                <OneTimePaymentWithCardElement
-                  cardClasses={cardClasses}
-                  formId={formId}
-                  handleStripeElementRef={this.handleStripeElementRef}
-                  hasCardError={hasCardError}
-                  error={this.state.error}
-                  intl={intl}
-                  marketplaceName={marketplaceName}
-                />
-              </React.Fragment>
-            )}
-
-            {showOnetimePaymentFields ? (
+        {isIdeal && billingDetailsNeeded && !loadingData ? (
+          <div className={css.idealBankContainer}>
+            <Heading as="h3" rootClassName={css.heading}>
+              <FormattedMessage id="StripePaymentForm.idealBankHeading" />
+            </Heading>
+            <label className={css.paymentLabel} htmlFor={`${formId}-ideal-bank`}>
+              <FormattedMessage id="StripePaymentForm.idealBankLabel" />
+            </label>
+            <div
+              className={cardClasses}
+              id={`${formId}-ideal-bank`}
+              ref={this.handleIdealBankElementRef}
+            />
+            {billingDetailsNeeded ? (
               <div className={css.billingDetails}>
                 <Heading as="h3" rootClassName={css.heading}>
                   <FormattedMessage id="StripePaymentForm.billingDetails" />
                 </Heading>
-
                 {askShippingDetails ? (
                   <FieldCheckbox
                     className={css.sameAddressCheckbox}
@@ -627,7 +828,6 @@ class StripePaymentForm extends Component {
                     onChange={handleSameAddressCheckbox}
                   />
                 ) : null}
-
                 <FieldTextInput
                   className={css.field}
                   type="text"
@@ -637,16 +837,19 @@ class StripePaymentForm extends Component {
                   label={billingDetailsNameLabel}
                   placeholder={billingDetailsNamePlaceholder}
                 />
-
                 {billingAddress}
               </div>
             ) : null}
-          </React.Fragment>
-        ) : loadingData ? (
-          <p className={css.spinner}>
-            <IconSpinner />
-          </p>
+          </div>
         ) : null}
+
+        <div
+          className={classNames(css.cardContent, {
+            [css.cardContentHidden]: isIdeal,
+          })}
+        >
+          {cardContent}
+        </div>
 
         {initiateOrderError ? (
           <span className={css.errorMessage}>{initiateOrderError.message}</span>

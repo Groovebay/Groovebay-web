@@ -285,6 +285,10 @@
   background-color: var(--colorGrey100); /* Loading BG color */
 }
 
+.detailsHeading {
+  composes: h4 from global;
+}
+
 .detailsHeadings {
   display: none;
 
@@ -457,4 +461,116 @@
 
 .incompatibleCurrency {
   margin-top: 20px;
+}
+
+/* Details column is visible only on desktop */
+
+.detailsContainer {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Coloring */
+  background-color: var(--colorWhite);
+  border: 1px solid var(--colorGrey100);
+  border-radius: 2px;
+  @media (--viewportLarge) {
+    /* Dimensions */
+    width: 70%;
+    max-width: 519px;
+  }
+}
+
+.detailsContainerDesktop {
+  display: none !important;
+
+  @media (--viewportLarge) {
+    /* Dimensions */
+    display: flex !important;
+    flex-direction: column;
+  }
+}
+
+.detailsContainerMobile {
+  @media (--viewportLarge) {
+    display: none;
+  }
+}
+
+.listingImage {
+  /* Layout - image will take space defined by aspect ratio wrapper */
+  width: 100%;
+  border: solid 1px var(--matterColorNegative);
+  border-radius: 4px;
+  height: 80px;
+  min-width: 80px;
+  width: 80px;
+  object-fit: cover;
+}
+
+.avatarWrapper {
+  /* Position (over the listing image)*/
+
+  /* Rendering context to the same lavel as listing image */
+  position: relative;
+
+  /* Layout */
+  display: flex;
+  gap: 16px;
+}
+
+.listingDetailsWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background-color: var(--colorGrey50);
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.listingDetails {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  @media (--viewportLarge) {
+    gap: 16px;
+  }
+}
+
+.orderSummaryWrapper {
+  position: relative;
+  @media (--viewportLarge) {
+    padding: 0 48px;
+  }
+}
+
+.avatarWrapperCart {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.listingDetailsText {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.listingDetailsTextWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.listingDetailsTextTitle h5 {
+  margin: 0;
+}
+
+.listingDetailsTextPrice {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }

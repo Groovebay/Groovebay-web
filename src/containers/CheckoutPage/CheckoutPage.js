@@ -47,6 +47,7 @@ import CheckoutPageWithPayment, {
   loadInitialDataForStripePayments,
 } from './CheckoutPageWithPayment';
 import CheckoutPageWithInquiryProcess from './CheckoutPageWithInquiryProcess';
+import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 
 const STORAGE_KEY = 'CheckoutPage';
 
@@ -220,9 +221,14 @@ const mapStateToProps = state => {
     initiateInquiryError,
     initiateOrderError,
     confirmPaymentError,
+    queryTransactionListingsIds,
   } = state.CheckoutPage;
   const { currentUser } = state.user;
   const { confirmCardPaymentError, paymentIntent, retrievePaymentIntentError } = state.stripe;
+  const listings = getMarketplaceEntities(
+    state,
+    queryTransactionListingsIds.map(id => ({ id, type: 'listing' }))
+  );
   return {
     scrollingDisabled: isScrollingDisabled(state),
     currentUser,
@@ -240,6 +246,7 @@ const mapStateToProps = state => {
     confirmPaymentError,
     paymentIntent,
     retrievePaymentIntentError,
+    listings,
   };
 };
 
