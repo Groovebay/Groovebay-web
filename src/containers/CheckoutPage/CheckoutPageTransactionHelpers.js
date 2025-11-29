@@ -380,7 +380,6 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   };
 
   const fnClearAuthorCartMaybe = async order => {
-    console.log({ fnClearAuthorCartMaybe: order });
     if (order.attributes.protectedData.providerCart && order.attributes.protectedData.fromCart) {
       const providerId = order?.relationships?.provider?.data?.id?.uuid;
       await onClearAuthorCart(providerId);

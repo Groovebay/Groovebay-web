@@ -591,7 +591,6 @@ export const CheckoutPageWithPayment = props => {
     currency,
     'stripe'
   );
-  console.log(tx);
   // Render an error message if the listing is using a non Stripe supported currency
   // and is using a transaction process with Stripe actions (default-booking or default-purchase)
   if (!isStripeCompatibleCurrency) {

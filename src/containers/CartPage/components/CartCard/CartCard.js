@@ -47,6 +47,7 @@ const CartCard = ({
   providerTotalItems,
   className,
   onCheckout,
+  updateCartInProgress,
 }) => {
   const classes = classNames(css.root, className);
 
@@ -61,6 +62,7 @@ const CartCard = ({
   });
 
   // Group items by listing for better organization
+  const isLoading = items.find(i => updateCartInProgress.includes(i.listing.id.uuid));
 
   return (
     <div key={providerId} className={classes}>
@@ -109,8 +111,8 @@ const CartCard = ({
         </div>
         <Button
           className={css.checkoutButtonCta}
-          disabled={inProgress || disabledCheckout}
-          inProgress={inProgress}
+          disabled={inProgress || disabledCheckout || isLoading}
+          inProgress={inProgress || isLoading}
           onClick={onCheckout}
         >
           <FormattedMessage id="CartCard.checkout" />

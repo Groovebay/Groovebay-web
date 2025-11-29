@@ -117,6 +117,7 @@ const renderCartListings = props => {
       providerTotalFormatted={group.providerTotalFormatted}
       providerTotalItems={group.providerTotalItems}
       onCheckout={() => onCheckout(group.providerId)}
+      updateCartInProgress={updateCartInProgress}
     />
   ));
 };
