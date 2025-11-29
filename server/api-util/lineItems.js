@@ -222,9 +222,9 @@ const getProviderCartLineItems = (
     const quantity = providerCart[listing.id.uuid].quantity;
 
     const unitPrice = listing.attributes.price;
-
+    const code = listings.length > 1 ? `line-item/item-${listing.id.uuid}` : `line-item/item`;
     const lineItem = {
-      code: `line-item/item-${listing.id.uuid}`,
+      code,
       unitPrice,
       quantity,
       includeFor: ['customer', 'provider'],
@@ -303,4 +303,39 @@ exports.transactionLineItems = (listings, orderData, providerCommission, custome
     );
   }
   return getDefaultLineItems(listings?.[0], orderData, providerCommission, customerCommission);
+};
+
+exports.formatLineItems = (lineItems, listings) => {
+  const formattedLineItems = lineItems.map(item => {
+    const code = item.code;
+    const isPercentage = typeof item.percentage !== 'undefined';
+    if (code.includes('item-')) {
+      const listingId = code.split('item-')[1];
+      const listingTitle = listings.find(listing => listing.id.uuid === listingId).attributes.title;
+      return {
+        code: 'line-item/item',
+        actualCode: item.code,
+        title: `${listingTitle}`,
+        quantity: item.quantity,
+        unitPriceAmount: item.unitPrice.amount / 100,
+        unitPriceCurrency: item.unitPrice.currency,
+        lineTotalAmount: (item.unitPrice.amount / 100) * item.quantity,
+        lineTotalCurrency: item.unitPrice.currency,
+        includeFor: item.includeFor,
+      };
+    } else {
+      return {
+        code: item.code,
+        title: item.code,
+        ...(isPercentage ? { percentage: item.percentage } : { quantity: item.quantity }),
+        unitPriceAmount: item.unitPrice.amount / 100,
+        unitPriceCurrency: item.unitPrice.currency,
+        includeFor: item.includeFor,
+        lineTotalAmount:
+          (item.unitPrice.amount / 100) * (isPercentage ? item.percentage / 100 : item.quantity),
+        lineTotalCurrency: item.unitPrice.currency,
+      };
+    }
+  });
+  return formattedLineItems;
 };

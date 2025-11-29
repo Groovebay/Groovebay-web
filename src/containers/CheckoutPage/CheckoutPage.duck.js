@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import pick from 'lodash/pick';
-import { initiatePrivileged, transitionPrivileged } from '../../util/api';
+import { confirmStock, initiatePrivileged, transitionPrivileged } from '../../util/api';
 import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
@@ -456,6 +456,17 @@ export const queryTransactionListingsThunk = createAsyncThunk(
     serializeError: storableError,
   }
 );
+
+export const confirmStockThunk = createAsyncThunk(
+  'CheckoutPage/confirmStock',
+  transactionId => {
+    return confirmStock({ txId: transactionId });
+  },
+  {
+    serializeError: storableError,
+  }
+);
+
 // ================ Slice ================ //
 
 const initialState = {

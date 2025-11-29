@@ -9,6 +9,9 @@ const initialState = {
   cart: {},
   updateCartInProgress: [],
   updateCartError: null,
+
+  clearAuthorCartInProgress: [],
+  clearAuthorCartError: null,
 };
 
 const removeListingsFromCart = (cart, listingIds) => {
@@ -63,6 +66,21 @@ const cartSlice = createSlice({
           listingId => listingId !== action.meta.arg.listingId
         );
         state.updateCartError = action.payload;
+      })
+      .addCase(clearAuthorCartThunk.pending, (state, action) => {
+        state.clearAuthorCartInProgress.push(action.meta.arg);
+        state.clearAuthorCartError = null;
+      })
+      .addCase(clearAuthorCartThunk.fulfilled, (state, action) => {
+        state.clearAuthorCartInProgress = state.clearAuthorCartInProgress.filter(
+          providerId => providerId !== action.meta.arg
+        );
+      })
+      .addCase(clearAuthorCartThunk.rejected, (state, action) => {
+        state.clearAuthorCartInProgress = state.clearAuthorCartInProgress.filter(
+          providerId => providerId !== action.meta.arg
+        );
+        state.clearAuthorCartError = action.payload;
       });
   },
 });
@@ -157,3 +175,30 @@ export const saveCartToLocalStorage = cart => dispatch => {
     }
   }
 };
+
+export const clearAuthorCartThunk = createAsyncThunk(
+  'cart/clearAuthorCartThunk',
+  async (providerId, thunkAPI) => {
+    const { dispatch, getState } = thunkAPI;
+    const currentCart = { ...getState().cart?.cart } || {};
+    console.log({ clearAuthorCartThunk: currentCart, providerId });
+    if (currentCart[providerId]) {
+      delete currentCart[providerId];
+    }
+    await dispatch(
+      updateCurrentUserProfileThunk({
+        data: {
+          privateData: { cart: currentCart },
+        },
+        options: {
+          expand: true,
+        },
+      })
+    );
+    dispatch(setCart({ ...currentCart }));
+    return { cart: currentCart };
+  },
+  {
+    serializeError: storableError,
+  }
+);

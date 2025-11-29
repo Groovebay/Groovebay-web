@@ -152,9 +152,6 @@ const PaymentMethodSelector = props => {
 
   return (
     <React.Fragment>
-      <Heading as="h3" rootClassName={css.heading}>
-        <FormattedMessage id="StripePaymentForm.payWithHeading" />
-      </Heading>
       <SavedCardDetails
         className={css.paymentMethodSelector}
         card={defaultPaymentMethod.attributes.card}
@@ -522,34 +519,6 @@ class StripePaymentForm extends Component {
       }
     }
 
-    // If we still don't have a value but have the element,
-    // we can still proceed - Stripe will extract the value from the element
-    // The element itself will be passed to confirmIdealPayment
-    if (isIdeal && !finalIdealBankValue && this.idealBankElement) {
-      // Check if element has a selected value by checking its internal state
-      // This is a fallback - ideally the change event should have fired
-      console.warn(
-        'idealBank value is null but element exists - element will be passed directly to Stripe'
-      );
-      // We'll allow submission since Stripe can extract the value from the element
-      // The element must exist for this to work
-    }
-
-    console.log({
-      idealBankValue,
-      finalIdealBankValue,
-      isIdeal,
-      hasElement: !!this.idealBankElement,
-    });
-
-    // For iDEAL, we need either the value OR the element itself
-    // If we have the element, Stripe will extract the bank selection from it
-    if (isIdeal && !finalIdealBankValue && !this.idealBankElement) {
-      // iDEAL requires bank selection - neither value nor element available
-      console.warn('iDEAL bank not selected and element not available');
-      return;
-    }
-
     const params = {
       message: initialMessage ? initialMessage.trim() : null,
       card: this.card,
@@ -594,7 +563,8 @@ class StripePaymentForm extends Component {
       isBooking,
       isFuzzyLocation,
       values,
-      errors,
+      disablePaymentMethodTypeChange,
+      hasHandledIdealPayment,
     } = formRenderProps;
 
     this.finalFormAPI = formApi;
@@ -626,8 +596,10 @@ class StripePaymentForm extends Component {
     );
 
     const submitDisabled =
-      invalid || (onetimePaymentNeedsAttention && !isIdeal) || submitInProgress;
-
+      invalid ||
+      (onetimePaymentNeedsAttention && !isIdeal) ||
+      submitInProgress ||
+      (isIdeal && !this.state.idealBankValue && !hasHandledIdealPayment);
     const hasCardError = this.state.error && !submitInProgress;
     const hasPaymentErrors = confirmCardPaymentError || confirmPaymentError;
     const classes = classNames(rootClassName || css.root, className);
@@ -715,9 +687,6 @@ class StripePaymentForm extends Component {
             />
           ) : (
             <React.Fragment>
-              <Heading as="h3" rootClassName={css.heading}>
-                <FormattedMessage id="StripePaymentForm.paymentHeading" />
-              </Heading>
               <OneTimePaymentWithCardElement
                 cardClasses={cardClasses}
                 formId={formId}
@@ -770,9 +739,66 @@ class StripePaymentForm extends Component {
           <IconSpinner />
         </p>
       ) : null;
+
+    const idealContent =
+      isIdeal && billingDetailsNeeded && !loadingData ? (
+        <div className={css.idealBankContainer}>
+          <label className={css.paymentLabel} htmlFor={`${formId}-ideal-bank`}>
+            <FormattedMessage id="StripePaymentForm.idealBankLabel" />
+          </label>
+          <div
+            className={cardClasses}
+            id={`${formId}-ideal-bank`}
+            ref={this.handleIdealBankElementRef}
+          />
+          {billingDetailsNeeded ? (
+            <div className={css.billingDetails}>
+              <Heading as="h3" rootClassName={css.heading}>
+                <FormattedMessage id="StripePaymentForm.billingDetails" />
+              </Heading>
+              {askShippingDetails ? (
+                <FieldCheckbox
+                  className={css.sameAddressCheckbox}
+                  textClassName={css.sameAddressLabel}
+                  id="sameAddressCheckbox"
+                  name="sameAddressCheckbox"
+                  label={intl.formatMessage({
+                    id: 'StripePaymentForm.sameBillingAndShippingAddress',
+                  })}
+                  value="sameAddress"
+                  useSuccessColor
+                  onChange={handleSameAddressCheckbox}
+                />
+              ) : null}
+              <FieldTextInput
+                className={css.field}
+                type="text"
+                id="name"
+                name="name"
+                autoComplete="cc-name"
+                label={billingDetailsNameLabel}
+                placeholder={billingDetailsNamePlaceholder}
+              />
+              {billingAddress}
+            </div>
+          ) : null}
+        </div>
+      ) : null;
     return hasStripeKey ? (
       <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
+        <LocationOrShippingDetails
+          askShippingDetails={askShippingDetails}
+          showPickUpLocation={showPickUpLocation}
+          showLocation={showLocation}
+          listingLocation={listingLocation}
+          isFuzzyLocation={isFuzzyLocation}
+          formApi={formApi}
+          locale={locale}
+          intl={intl}
+        />
+
         <FieldSelect
+          disabled={disablePaymentMethodTypeChange}
           className={css.paymentMethodTypeSelect}
           id="paymentMethodType"
           name="paymentMethodType"
@@ -785,64 +811,15 @@ class StripePaymentForm extends Component {
             {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeIdeal' })}
           </option>
         </FieldSelect>
-        <LocationOrShippingDetails
-          askShippingDetails={askShippingDetails}
-          showPickUpLocation={showPickUpLocation}
-          showLocation={showLocation}
-          listingLocation={listingLocation}
-          isFuzzyLocation={isFuzzyLocation}
-          formApi={formApi}
-          locale={locale}
-          intl={intl}
-        />
 
-        {isIdeal && billingDetailsNeeded && !loadingData ? (
-          <div className={css.idealBankContainer}>
-            <Heading as="h3" rootClassName={css.heading}>
-              <FormattedMessage id="StripePaymentForm.idealBankHeading" />
-            </Heading>
-            <label className={css.paymentLabel} htmlFor={`${formId}-ideal-bank`}>
-              <FormattedMessage id="StripePaymentForm.idealBankLabel" />
-            </label>
-            <div
-              className={cardClasses}
-              id={`${formId}-ideal-bank`}
-              ref={this.handleIdealBankElementRef}
-            />
-            {billingDetailsNeeded ? (
-              <div className={css.billingDetails}>
-                <Heading as="h3" rootClassName={css.heading}>
-                  <FormattedMessage id="StripePaymentForm.billingDetails" />
-                </Heading>
-                {askShippingDetails ? (
-                  <FieldCheckbox
-                    className={css.sameAddressCheckbox}
-                    textClassName={css.sameAddressLabel}
-                    id="sameAddressCheckbox"
-                    name="sameAddressCheckbox"
-                    label={intl.formatMessage({
-                      id: 'StripePaymentForm.sameBillingAndShippingAddress',
-                    })}
-                    value="sameAddress"
-                    useSuccessColor
-                    onChange={handleSameAddressCheckbox}
-                  />
-                ) : null}
-                <FieldTextInput
-                  className={css.field}
-                  type="text"
-                  id="name"
-                  name="name"
-                  autoComplete="cc-name"
-                  label={billingDetailsNameLabel}
-                  placeholder={billingDetailsNamePlaceholder}
-                />
-                {billingAddress}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        {billingDetailsNeeded && !loadingData && (
+          <Heading as="h3" rootClassName={css.heading}>
+            <FormattedMessage id="StripePaymentForm.idealBankHeading" />
+          </Heading>
+        )}
 
+        {idealContent}
+        {/* cardContent : should be hidden by css, not conditionally because makes the stripe elements card element rerender multiple times the card will not working anymore*/}
         <div
           className={classNames(css.cardContent, {
             [css.cardContentHidden]: isIdeal,

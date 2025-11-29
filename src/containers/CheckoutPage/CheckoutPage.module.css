@@ -477,7 +477,7 @@
   border-radius: 2px;
   @media (--viewportLarge) {
     /* Dimensions */
-    width: 70%;
+    width: 519px;
     max-width: 519px;
   }
 }

@@ -15,7 +15,10 @@ const MAX_SOCKETS_DEFAULT = 10;
 const BASE_URL = process.env.REACT_APP_SHARETRIBE_SDK_BASE_URL;
 const ASSET_CDN_BASE_URL = process.env.REACT_APP_SHARETRIBE_SDK_ASSET_CDN_BASE_URL;
 
-const { SHARETRIBE_INTEGRATION_CLIENT_ID, SHARETRIBE_INTEGRATION_CLIENT_SECRET } = process.env;
+const {
+  SHARETRIBE_INTEGRATION_SDK_CLIENT_ID,
+  SHARETRIBE_INTEGRATION_SDK_CLIENT_SECRET,
+} = process.env;
 
 // Application type handlers for JS SDK.
 //
@@ -247,8 +250,8 @@ exports.fetchAccessControlAsset = sdk => {
 
 exports.getIntegrationSdk = () =>
   sharetribeIntegrationSdk.createInstance({
-    clientId: SHARETRIBE_INTEGRATION_CLIENT_ID,
-    clientSecret: SHARETRIBE_INTEGRATION_CLIENT_SECRET,
+    clientId: SHARETRIBE_INTEGRATION_SDK_CLIENT_ID,
+    clientSecret: SHARETRIBE_INTEGRATION_SDK_CLIENT_SECRET,
     // Pass rate limit handlers
     queryLimiter: queryLimiter,
     commandLimiter: commandLimiter,

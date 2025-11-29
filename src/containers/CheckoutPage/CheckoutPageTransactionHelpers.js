@@ -213,8 +213,10 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     sessionStorageKey,
     stripeCustomer,
     stripePaymentMethodId,
+    onConfirmStock,
+    onClearAuthorCart,
   } = extraPaymentParams;
-  const { paymentMethodTypes } = orderParams;
+  const { paymentMethodTypes = [] } = orderParams;
   const isIdeal = paymentMethodTypes.includes('ideal');
   const storedTx = ensureTransaction(pageData.transaction);
 
@@ -263,6 +265,17 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     });
 
     return orderPromise;
+  };
+
+  const fnConfirmStockMaybe = async fnParams => {
+    const order = fnParams;
+    if (
+      order.attributes.protectedData.providerCart &&
+      !order.attributes.metadata.childrenTransactionStockConfirmed
+    ) {
+      await onConfirmStock(order.id.uuid);
+    }
+    return fnParams;
   };
 
   //////////////////////////////////
@@ -366,6 +379,15 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     return orderPromise;
   };
 
+  const fnClearAuthorCartMaybe = async order => {
+    console.log({ fnClearAuthorCartMaybe: order });
+    if (order.attributes.protectedData.providerCart && order.attributes.protectedData.fromCart) {
+      const providerId = order?.relationships?.provider?.data?.id?.uuid;
+      await onClearAuthorCart(providerId);
+    }
+    return order;
+  };
+
   //////////////////////////////////
   // Step 4: send initial message //
   //////////////////////////////////
@@ -406,8 +428,10 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   const composeAsync = (...funcs) => x => funcs.reduce(applyAsync, Promise.resolve(x));
   const handlePaymentIntentCreation = composeAsync(
     fnRequestPayment,
+    fnConfirmStockMaybe,
     fnConfirmCardPayment,
     fnConfirmPayment,
+    fnClearAuthorCartMaybe,
     fnSendMessage,
     fnSavePaymentMethod
   );

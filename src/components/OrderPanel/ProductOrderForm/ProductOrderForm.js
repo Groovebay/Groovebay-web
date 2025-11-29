@@ -15,6 +15,7 @@ import {
   H3,
   H6,
   SecondaryButton,
+  FieldQuantity,
 } from '../../../components';
 
 import EstimatedCustomerBreakdownMaybe from '../EstimatedCustomerBreakdownMaybe';
@@ -244,23 +245,15 @@ const renderForm = formRenderProps => {
           validate={numberAtLeast(quantityRequiredMsg, 1)}
         />
       ) : (
-        <FieldSelect
+        <FieldQuantity
           id={`${formId}.quantity`}
           className={css.quantityField}
           name="quantity"
-          disabled={!hasStock}
           label={intl.formatMessage({ id: 'ProductOrderForm.quantityLabel' })}
           validate={numberAtLeast(quantityRequiredMsg, 1)}
-        >
-          <option disabled value="">
-            {intl.formatMessage({ id: 'ProductOrderForm.selectQuantityOption' })}
-          </option>
-          {quantities.map(quantity => (
-            <option key={quantity} value={quantity}>
-              {intl.formatMessage({ id: 'ProductOrderForm.quantityOption' }, { quantity })}
-            </option>
-          ))}
-        </FieldSelect>
+          disabled={!hasStock}
+          maxQuantity={currentStock}
+        />
       )}
 
       <DeliveryMethodMaybe
@@ -382,8 +375,8 @@ const ProductOrderForm = props => {
   const hasOneItemMode = !allowOrdersOfMultipleItems && currentStock > 0;
   const quantityMaybe =
     hasOneItemLeft || hasOneItemMode
-      ? { quantity: currentListingQuantityInCart > 0 ? currentListingQuantityInCart : '1' }
-      : { quantity: currentListingQuantityInCart };
+      ? { quantity: currentListingQuantityInCart > 0 ? currentListingQuantityInCart : 1 }
+      : { quantity: currentListingQuantityInCart || 1 };
   const deliveryMethodMaybe =
     shippingEnabled && !pickupEnabled
       ? { deliveryMethod: 'shipping' }
@@ -394,7 +387,7 @@ const ProductOrderForm = props => {
       : {};
   const hasMultipleDeliveryMethods = pickupEnabled && shippingEnabled;
   const initialValues = { ...quantityMaybe, ...deliveryMethodMaybe };
-
+  console.log({ initialValues });
   return (
     <FinalForm
       initialValues={initialValues}

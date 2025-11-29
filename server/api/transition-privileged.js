@@ -1,5 +1,5 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
-const { transactionLineItems } = require('../api-util/lineItems');
+const { transactionLineItems, formatLineItems } = require('../api-util/lineItems');
 const {
   addOfferToMetadata,
   getAmountFromPreviousOffer,
@@ -118,12 +118,23 @@ module.exports = async (req, res) => {
         ...restParams,
         lineItems,
         ...metadataMaybe,
+        protectedData: {
+          ...params.protectedData,
+          formattedLineItems: formatLineItems(lineItems, [listing]),
+        },
       },
     };
 
-    const apiResponse = isSpeculative
+    let apiResponse = isSpeculative
       ? await trustedSdk.transactions.transitionSpeculative(body, queryParams)
       : await trustedSdk.transactions.transition(body, queryParams);
+
+    if (orderData.providerCart && !isSpeculative) {
+      apiResponse = await updateStockReservationTransactions({
+        tx: denormalisedResponseEntities(apiResponse)[0],
+        sdk: trustedSdk,
+      });
+    }
 
     const { status, statusText, data } = apiResponse;
     res

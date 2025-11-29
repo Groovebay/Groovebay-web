@@ -6,7 +6,10 @@ import { propTypes } from '../../../util/types';
 import { userDisplayNameAsString } from '../../../util/data';
 import { isMobileSafari } from '../../../util/userAgent';
 import { createSlug } from '../../../util/urlHelpers';
-import { NEGOTIATION_PROCESS_NAME } from '../../../transactions/transaction';
+import {
+  isPurchaseProcess as isPurchaseProcessFn,
+  NEGOTIATION_PROCESS_NAME,
+} from '../../../transactions/transaction';
 import { displayPrice } from '../../../util/configHelpers';
 
 import { AvatarLarge, NamedLink, UserDisplayName } from '../../../components';
@@ -26,6 +29,7 @@ import DiminishedActionButtonMaybe from './DiminishedActionButtonMaybe';
 import PanelHeading from './PanelHeading';
 
 import css from './TransactionPanel.module.css';
+import CartDetailsSideCard from '../../CheckoutPage/CartDetailsSideCard';
 
 // Helper function to get display names for different roles
 const displayNames = (currentUser, provider, customer, intl) => {
@@ -176,7 +180,9 @@ export class TransactionPanelComponent extends Component {
       orderPanel,
       config,
       hasViewingRights,
+      transactionListings,
     } = this.props;
+    const isPurchaseProcess = isPurchaseProcessFn(stateData.processName);
 
     const hasTransitions = transitions.length > 0;
     const isCustomer = transactionRole === 'customer';
@@ -221,25 +227,109 @@ export class TransactionPanelComponent extends Component {
 
     const classes = classNames(rootClassName || css.root, className);
 
+    const cartDetails = (props = {}) => (
+      <CartDetailsSideCard
+        className={css.cartDetailsSideCard}
+        listings={transactionListings}
+        author={listing?.author}
+        layoutListingImageConfig={config.layout.listingImage}
+        isInquiryProcess={false}
+        intl={intl}
+        providerCart={protectedData?.providerCart}
+        processName={stateData.processName}
+        breakdown={orderBreakdown}
+        priceVariantName={protectedData?.priceVariantName}
+        {...props}
+      />
+    );
+
+    const breakdown = (
+      <BreakdownMaybe
+        className={css.breakdownContainer}
+        orderBreakdown={orderBreakdown}
+        processName={stateData.processName}
+      />
+    );
+
+    const listingDetails =
+      isPurchaseProcess && protectedData?.providerCart ? (
+        // Show breakdown and action buttons followed by all cart listings
+        <div className={css.detailCard}>
+          {stateData.showOrderPanel ? orderPanel : null}
+          {cartDetails({
+            className: css.cartDetailsDesktop,
+          })}
+
+          {stateData.showActionButtons ? (
+            <div className={css.desktopActionButtons}>{actionButtons}</div>
+          ) : null}
+        </div>
+      ) : (
+        <div className={css.detailCard}>
+          <DetailCardImage
+            avatarWrapperClassName={css.avatarWrapperDesktop}
+            listingTitle={listingTitle}
+            image={firstImage}
+            provider={provider}
+            isCustomer={isCustomer}
+            showListingImage={showListingImage}
+            listingImageConfig={config.layout.listingImage}
+          />
+
+          <DetailCardHeadingsMaybe
+            showDetailCardHeadings={showDetailCardHeadings}
+            showListingImage={showListingImage}
+            listingTitle={
+              listingDeleted ? (
+                listingTitle
+              ) : (
+                <NamedLink
+                  name="ListingPage"
+                  params={{
+                    id: listing.id?.uuid,
+                    slug: createSlug(listingTitle),
+                  }}
+                >
+                  {listingTitle}
+                </NamedLink>
+              )
+            }
+            showPrice={showPrice}
+            price={listing?.attributes?.price}
+            intl={intl}
+          />
+          {showOrderPanel ? orderPanel : null}
+          {breakdown}
+
+          {stateData.showActionButtons ? (
+            <div className={css.desktopActionButtons}>{actionButtons}</div>
+          ) : null}
+        </div>
+      );
+
     return (
       <div className={classes}>
         <div className={css.container}>
           <div className={css.txInfo}>
-            <DetailCardImage
-              rootClassName={css.imageWrapperMobile}
-              avatarWrapperClassName={css.avatarWrapperMobile}
-              listingTitle={listingTitle}
-              image={firstImage}
-              provider={provider}
-              isCustomer={isCustomer}
-              showListingImage={showListingImage}
-              listingImageConfig={config.layout.listingImage}
-            />
-            {isProvider ? (
-              <div className={css.avatarWrapperProviderDesktop}>
-                <AvatarLarge user={customer} className={css.avatarDesktop} />
-              </div>
-            ) : null}
+            {isPurchaseProcess ? null : (
+              <>
+                <DetailCardImage
+                  rootClassName={css.imageWrapperMobile}
+                  avatarWrapperClassName={css.avatarWrapperMobile}
+                  listingTitle={listingTitle}
+                  image={firstImage}
+                  provider={provider}
+                  isCustomer={isCustomer}
+                  showListingImage={showListingImage}
+                  listingImageConfig={config.layout.listingImage}
+                />
+                {isProvider ? (
+                  <div className={css.avatarWrapperProviderDesktop}>
+                    <AvatarLarge user={customer} className={css.avatarDesktop} />
+                  </div>
+                ) : null}
+              </>
+            )}
 
             <PanelHeading
               processName={stateData.processName}
@@ -273,13 +363,8 @@ export class TransactionPanelComponent extends Component {
             {!isInquiryProcess ? (
               <div className={css.orderDetails}>
                 <div className={css.orderDetailsMobileSection}>
-                  {showBreakDown ? (
-                    <BreakdownMaybe
-                      orderBreakdown={orderBreakdown}
-                      processName={stateData.processName}
-                      priceVariantName={priceVariantName}
-                    />
-                  ) : null}
+                  {isPurchaseProcess ? cartDetails() : null}
+
                   <DiminishedActionButtonMaybe
                     showDispute={stateData.showDispute}
                     onOpenDisputeModal={onOpenDisputeModal}
@@ -355,50 +440,7 @@ export class TransactionPanelComponent extends Component {
             <div
               className={classNames(css.stickySection, { [css.noListingImage]: !showListingImage })}
             >
-              <div className={css.detailCard}>
-                <DetailCardImage
-                  avatarWrapperClassName={css.avatarWrapperDesktop}
-                  listingTitle={listingTitle}
-                  image={firstImage}
-                  provider={provider}
-                  isCustomer={isCustomer}
-                  showListingImage={showListingImage}
-                  listingImageConfig={config.layout.listingImage}
-                />
-
-                <DetailCardHeadingsMaybe
-                  showDetailCardHeadings={showDetailCardHeadings}
-                  showListingImage={showListingImage}
-                  listingTitle={
-                    listingDeleted ? (
-                      listingTitle
-                    ) : (
-                      <NamedLink
-                        name="ListingPage"
-                        params={{ id: listing.id?.uuid, slug: createSlug(listingTitle) }}
-                      >
-                        {listingTitle}
-                      </NamedLink>
-                    )
-                  }
-                  showPrice={showPrice}
-                  price={listing?.attributes?.price}
-                  intl={intl}
-                />
-                {showOrderPanel ? orderPanel : null}
-                {showBreakDown ? (
-                  <BreakdownMaybe
-                    className={css.breakdownContainer}
-                    orderBreakdown={orderBreakdown}
-                    processName={stateData.processName}
-                    priceVariantName={priceVariantName}
-                  />
-                ) : null}
-
-                {stateData.showActionButtons ? (
-                  <div className={css.desktopActionButtons}>{actionButtons}</div>
-                ) : null}
-              </div>
+              {listingDetails}
               <DiminishedActionButtonMaybe
                 showDispute={stateData.showDispute}
                 onOpenDisputeModal={onOpenDisputeModal}

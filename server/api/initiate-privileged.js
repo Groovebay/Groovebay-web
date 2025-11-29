@@ -1,8 +1,10 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
-const { transactionLineItems } = require('../api-util/lineItems');
+const { transactionLineItems, formatLineItems } = require('../api-util/lineItems');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const { getSdk, getTrustedSdk, handleError, serialize } = require('../api-util/sdk');
 const { fetchListingsAndCommission } = require('../api-util/helpers');
+const { createStockReservationTransactions } = require('../api-util/transactionHelpers');
+const { denormalisedResponseEntities } = require('../api-util/format');
 
 const { Money } = sharetribeSdk.types;
 
@@ -77,12 +79,24 @@ module.exports = async (req, res) => {
         ...params,
         lineItems,
         ...metadataMaybe,
+        protectedData: {
+          ...params.protectedData,
+          formattedLineItems: formatLineItems(lineItems, listings),
+        },
       },
     };
 
-    const apiResponse = isSpeculative
+    let apiResponse = isSpeculative
       ? await trustedSdk.transactions.initiateSpeculative(body, queryParams)
       : await trustedSdk.transactions.initiate(body, queryParams);
+
+    if (orderData.providerCart && !isSpeculative) {
+      apiResponse = await createStockReservationTransactions({
+        tx: denormalisedResponseEntities(apiResponse)[0],
+        sdk: trustedSdk,
+        queryParams,
+      });
+    }
 
     const { status, statusText, data } = apiResponse;
     res

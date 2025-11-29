@@ -122,8 +122,6 @@ const getOrderParams = (pageData, shippingDetails, optionalPaymentParams, config
   const priceVariantNameMaybe = priceVariantName ? { priceVariantName } : {};
   const priceVariant = priceVariants?.find(pv => pv.name === priceVariantName);
   const priceVariantMaybe = priceVariant ? prefixPriceVariantProperties(priceVariant) : {};
-  const paymentMethodTypesMaybe =
-    pageData.paymentMethodType === 'ideal' ? { paymentMethodTypes: ['ideal'] } : {};
   const protectedDataMaybe = {
     protectedData: {
       ...getTransactionTypeData(listingType, unitType, config),
@@ -156,7 +154,6 @@ const getOrderParams = (pageData, shippingDetails, optionalPaymentParams, config
     ...optionalPaymentParams,
     ...providerCartMaybe,
     ...fromCartMaybe,
-    ...paymentMethodTypesMaybe,
   };
   return orderParams;
 };
@@ -264,6 +261,8 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     pageData,
     setPageData,
     sessionStorageKey,
+    onConfirmStock,
+    onClearAuthorCart,
   } = props;
   const {
     card,
@@ -312,6 +311,8 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     isPaymentFlowPayAndSaveCard: selectedPaymentFlow === PAY_AND_SAVE_FOR_LATER_USE,
     setPageData,
     paymentMethodType,
+    onConfirmStock,
+    onClearAuthorCart,
   };
 
   const shippingDetails = getShippingDetailsMaybe(formValues);
@@ -319,7 +320,9 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
   // but that can also be passed on Step 2
   // stripe.confirmCardPayment(stripe, { payment_method: stripePaymentMethodId })
   const optionalPaymentParams =
-    selectedPaymentFlow === USE_SAVED_CARD && hasDefaultPaymentMethodSaved
+    paymentMethodType === 'ideal'
+      ? { paymentMethodTypes: ['ideal'] }
+      : selectedPaymentFlow === USE_SAVED_CARD && hasDefaultPaymentMethodSaved
       ? { paymentMethod: stripePaymentMethodId }
       : selectedPaymentFlow === PAY_AND_SAVE_FOR_LATER_USE
       ? { setupPaymentMethodForSaving: true }
@@ -548,7 +551,23 @@ export const CheckoutPageWithPayment = props => {
   // If your marketplace works mostly in one country you can use initial values to select country automatically
   // e.g. {country: 'FI'}
 
-  const initialValuesForStripePayment = { name: userName, recipientName: userName };
+  const alreadyRequestPayment = existingTransaction?.attributes?.transitions?.some(tr =>
+    [
+      process.transitions.REQUEST_PAYMENT,
+      process.transitions.REQUEST_PAYMENT_AFTER_INQUIRY,
+      process.transitions.REQUEST_PUSH_PAYMENT,
+      process.transitions.REQUEST_PUSH_PAYMENT_AFTER_INQUIRY,
+    ].includes(tr.transition)
+  );
+
+  const defaultPaymentMethodType =
+    existingTransaction?.attributes?.protectedData?.paymentMethodType;
+
+  const initialValuesForStripePayment = {
+    name: userName,
+    recipientName: userName,
+    paymentMethodType: defaultPaymentMethodType || 'card',
+  };
   const askShippingDetails =
     orderData?.deliveryMethod === 'shipping' &&
     !hasTransactionPassedPendingPayment(existingTransaction, process);
@@ -572,7 +591,7 @@ export const CheckoutPageWithPayment = props => {
     currency,
     'stripe'
   );
-
+  console.log(tx);
   // Render an error message if the listing is using a non Stripe supported currency
   // and is using a transaction process with Stripe actions (default-booking or default-purchase)
   if (!isStripeCompatibleCurrency) {
@@ -677,6 +696,7 @@ export const CheckoutPageWithPayment = props => {
                 confirmCardPaymentError={confirmCardPaymentError}
                 confirmPaymentError={confirmPaymentError}
                 hasHandledCardPayment={hasPaymentIntentUserActionsDone}
+                hasHandledIdealPayment={hasPaymentIntentUserActionsDone}
                 loadingData={!stripeCustomerFetched}
                 defaultPaymentMethod={
                   hasDefaultPaymentMethod(stripeCustomerFetched, currentUser)
@@ -698,6 +718,7 @@ export const CheckoutPageWithPayment = props => {
                 marketplaceName={config.marketplaceName}
                 isBooking={isBookingProcessAlias(transactionProcessAlias)}
                 isFuzzyLocation={config.maps.fuzzy.enabled}
+                disablePaymentMethodTypeChange={!!alreadyRequestPayment}
               />
             ) : null}
           </section>

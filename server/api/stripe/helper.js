@@ -1,3 +1,4 @@
+const { denormalisedResponseEntities } = require('../../api-util/format');
 const { getIntegrationSdk } = require('../../api-util/sdk');
 
 const paymentMethodsAvailable = ['ideal'];
@@ -17,16 +18,27 @@ const confirmPaymentTransition = async data => {
       include: ['provider', 'listing'],
     });
 
-    const transactionId = txRes.data.data.id.uuid;
-
+    const [transaction] = denormalisedResponseEntities(txRes);
+    const transactionId = transaction.id;
     await iSdk.transactions.transition({
       id: transactionId,
       transition: 'transition/confirm-push-payment',
       params: {},
     });
 
+    const currentCart = transaction?.provider?.attributes?.profile?.privateData?.cart;
+    const providerId = transaction?.provider?.id?.uuid;
+    if (currentCart && currentCart[providerId]) {
+      delete currentCart[providerId];
+    }
+    await iSdk.users.updateProfile({
+      id: providerId,
+      privateData: {
+        cart: currentCart,
+      },
+    });
   } catch (error) {
-    console.log('Failed to update confirm payment transition', error);
+    console.log('Failed to update confirm payment transition', error.data.errors);
   }
 };
 
