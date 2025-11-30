@@ -244,6 +244,7 @@ export const handleSubmit = parameters => values => {
     quantity: quantityRaw,
     seats: seatsRaw,
     deliveryMethod,
+    providerCart,
     ...otherOrderData
   } = values;
 
@@ -279,6 +280,7 @@ export const handleSubmit = parameters => values => {
       ...seatsMaybe,
       ...deliveryMethodMaybe,
       ...otherOrderData,
+      providerCart,
     },
     confirmPaymentError: null,
   };

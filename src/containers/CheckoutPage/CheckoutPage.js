@@ -41,12 +41,15 @@ import {
   confirmPayment,
   sendMessage,
   initiateInquiryWithoutPayment,
+  confirmStockThunk,
 } from './CheckoutPage.duck';
 
 import CheckoutPageWithPayment, {
   loadInitialDataForStripePayments,
 } from './CheckoutPageWithPayment';
 import CheckoutPageWithInquiryProcess from './CheckoutPageWithInquiryProcess';
+import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
+import { clearAuthorCartThunk } from '../../ducks/cart.duck';
 
 const STORAGE_KEY = 'CheckoutPage';
 
@@ -220,9 +223,14 @@ const mapStateToProps = state => {
     initiateInquiryError,
     initiateOrderError,
     confirmPaymentError,
+    queryTransactionListingsIds,
   } = state.CheckoutPage;
   const { currentUser } = state.user;
   const { confirmCardPaymentError, paymentIntent, retrievePaymentIntentError } = state.stripe;
+  const listings = getMarketplaceEntities(
+    state,
+    queryTransactionListingsIds.map(id => ({ id, type: 'listing' }))
+  );
   return {
     scrollingDisabled: isScrollingDisabled(state),
     currentUser,
@@ -240,6 +248,7 @@ const mapStateToProps = state => {
     confirmPaymentError,
     paymentIntent,
     retrievePaymentIntentError,
+    listings,
   };
 };
 
@@ -259,6 +268,8 @@ const mapDispatchToProps = dispatch => ({
   onSendMessage: params => dispatch(sendMessage(params)),
   onSavePaymentMethod: (stripeCustomer, stripePaymentMethodId) =>
     dispatch(savePaymentMethod(stripeCustomer, stripePaymentMethodId)),
+  onConfirmStock: transactionId => dispatch(confirmStockThunk(transactionId)),
+  onClearAuthorCart: providerId => dispatch(clearAuthorCartThunk(providerId)),
 });
 
 const CheckoutPage = compose(

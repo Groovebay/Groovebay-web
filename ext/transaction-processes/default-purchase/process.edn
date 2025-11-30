@@ -54,8 +54,7 @@
   {:name :transition/confirm-push-payment,
    :actor :actor.role/operator,
    :actions
-   [{:name :action/accept-stock-reservation}
-    {:name :action/stripe-confirm-payment-intent}
+   [{:name :action/stripe-confirm-payment-intent}
     {:name :action/stripe-capture-payment-intent}],
    :from :state/pending-payment,
    :to :state/purchased}  

@@ -214,7 +214,6 @@ exports.calculateQuantityFromHours = (startDate, endDate) => {
  */
 exports.calculateLineTotal = lineItem => {
   const { code, unitPrice, quantity, percentage, seats, units } = lineItem;
-
   if (quantity) {
     return this.calculateTotalPriceFromQuantity(unitPrice, quantity);
   } else if (percentage != null) {
@@ -343,7 +342,7 @@ exports.hasMinimumCommission = commission => {
  * @param {Object} priceAttribute object containing listing price information
  * @returns {Array} provider commission line item
  */
-exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
+exports.getProviderCommissionMaybe = (providerCommission, orders, currency) => {
   // Check if either minimum commission or percentage are defined in the commission object
   const hasMinimumCommission = this.hasMinimumCommission(providerCommission);
   const hasCommissionPercentage = this.hasCommissionPercentage(providerCommission);
@@ -353,7 +352,7 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
   }
 
   // Calculate the total money paid into the transaction
-  const totalMoneyIn = this.calculateTotalFromLineItems([order]);
+  const totalMoneyIn = this.calculateTotalFromLineItems(orders);
   // Calculate the estimated commission with percentage applied, if applicable
   const estimatedCommissionFromPercentage = calculateCommissionWithPercentage(
     providerCommission?.percentage,
@@ -399,7 +398,7 @@ exports.getProviderCommissionMaybe = (providerCommission, order, currency) => {
  * @param {Object} order object containing order line items
  * @returns {Array} customer commission line item
  */
-exports.getCustomerCommissionMaybe = (customerCommission, order, currency) => {
+exports.getCustomerCommissionMaybe = (customerCommission, orders, currency) => {
   // Check if either minimum commission or percentage are defined in the commission object
   const hasMinimumCommission = this.hasMinimumCommission(customerCommission);
   const hasCommissionPercentage = this.hasCommissionPercentage(customerCommission);
@@ -409,7 +408,7 @@ exports.getCustomerCommissionMaybe = (customerCommission, order, currency) => {
   }
 
   // Calculate the total money paid into the transaction
-  const totalMoneyIn = this.calculateTotalFromLineItems([order]);
+  const totalMoneyIn = this.calculateTotalFromLineItems(orders);
   // Calculate the estimated commission with percentage applied, if applicable
   const estimatedCommissionFromPercentage = calculateCommissionWithPercentage(
     customerCommission?.percentage,
@@ -435,7 +434,7 @@ exports.getCustomerCommissionMaybe = (customerCommission, order, currency) => {
     : [
         {
           code: 'line-item/customer-commission',
-          unitPrice: this.calculateTotalFromLineItems([order]),
+          unitPrice: this.calculateTotalFromLineItems(orders),
           percentage: customerCommission.percentage,
           includeFor: ['customer'],
         },

@@ -12,6 +12,7 @@ import {
   MenuContent,
   MenuItem,
   NamedLink,
+  CartLink,
 } from '../../../../components';
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
@@ -189,6 +190,8 @@ const TopbarDesktop = props => {
     />
   );
 
+  const cartLink = <CartLink resolvedCurrentPage={currentPage} className={css.cartLink} />;
+
   return (
     <nav
       className={classes}
@@ -209,8 +212,8 @@ const TopbarDesktop = props => {
         hasClientSideContentReady={authenticatedOnClientSide || !isAuthenticatedOrJustHydrated}
         showCreateListingsLink={showCreateListingsLink}
       />
-
       {inboxLinkMaybe}
+      {cartLink}
       {profileMenuMaybe}
       {signupLinkMaybe}
       {loginLinkMaybe}

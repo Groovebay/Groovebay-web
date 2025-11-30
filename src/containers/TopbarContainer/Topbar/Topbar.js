@@ -27,6 +27,7 @@ import TopbarDesktop from './TopbarDesktop/TopbarDesktop';
 
 import css from './Topbar.module.css';
 import { getCurrentUserTypeRoles, showCreateListingLinkForUser } from '../../../util/userHelpers';
+import CartLink from '../../../components/CartLink/CartLink';
 
 const MAX_MOBILE_SCREEN_WIDTH = 1024;
 
@@ -400,6 +401,7 @@ const TopbarComponent = props => {
       />
 
       <GenericError show={showGenericError} />
+      <CartLink resolvedCurrentPage={resolvedCurrentPage} className={css.cartLink} />
     </div>
   );
 };

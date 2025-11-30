@@ -26,6 +26,7 @@ import {
 
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { fetchCurrentUserNotifications } from '../../ducks/user.duck';
+import { queryTransactionListingsThunk } from '../CheckoutPage/CheckoutPage.duck';
 
 const { UUID } = sdkTypes;
 
@@ -281,6 +282,10 @@ const fetchTransactionPayloadCreator = (
 
         if (canFetchTimeslots) {
           fetchMonthlyTimeSlots(dispatch, listing);
+        }
+        const providerCart = transaction?.attributes?.protectedData?.providerCart;
+        if (providerCart) {
+          dispatch(queryTransactionListingsThunk(providerCart));
         }
       } catch (error) {
         console.log(`transaction process (${processName}) was not recognized`);
@@ -625,6 +630,9 @@ const initialState = {
   lineItems: null,
   fetchLineItemsInProgress: false,
   fetchLineItemsError: null,
+
+  transactionListingIds: [],
+  queryTransactionListingsInProgress: false,
 };
 
 // Merge entity arrays using ids, so that conflicting items in newer array (b) overwrite old values (a).

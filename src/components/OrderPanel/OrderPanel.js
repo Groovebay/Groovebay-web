@@ -41,6 +41,7 @@ import PriceVariantPicker from './PriceVariantPicker/PriceVariantPicker';
 import SubmitFinePrint from './SubmitFinePrint/SubmitFinePrint';
 
 import css from './OrderPanel.module.css';
+import useCart from '../../hooks/useCart';
 
 const BookingTimeForm = loadable(() =>
   import(/* webpackChunkName: "BookingTimeForm" */ './BookingTimeForm/BookingTimeForm')
@@ -399,6 +400,8 @@ const OrderPanel = props => {
   const showInvalidPriceVariantsMessage =
     isPriceVariationsInUse && !hasValidPriceVariants(priceVariants);
 
+  const { cart, updateCart, updateCartInProgress, updateCartError } = useCart();
+
   const sharedProps = {
     lineItemUnitType,
     onSubmit,
@@ -412,6 +415,24 @@ const OrderPanel = props => {
     fetchLineItemsInProgress,
     fetchLineItemsError,
     payoutDetailsWarning,
+  };
+
+  const handleUpdateCart = ({ quantity }) => {
+    updateCart({
+      providerId: listing.author.id.uuid,
+      listingId: listing.id.uuid,
+      quantity: Number(quantity),
+    });
+  };
+  const currentListingQuantityInCart =
+    cart[listing.author.id.uuid]?.[listing.id.uuid]?.quantity ?? 0;
+
+  const cartProps = {
+    currentListingQuantityInCart,
+    updateCart: handleUpdateCart,
+    updateCartInProgress: updateCartInProgress.includes(listing.id.uuid),
+    updateCartError,
+    alreadyInCart: currentListingQuantityInCart > 0,
   };
 
   const showClosedListingHelpText = listing.id && isClosed;
@@ -526,6 +547,7 @@ const OrderPanel = props => {
             displayDeliveryMethod={displayPickup || displayShipping}
             onContactUser={onContactUser}
             {...sharedProps}
+            {...cartProps}
           />
         ) : showInquiryForm ? (
           <InquiryWithoutPaymentForm

@@ -7,6 +7,25 @@ import { NEGOTIATION_PROCESS_NAME, resolveLatestProcessName } from '../../transa
 import { storeData } from './CheckoutPageSessionHelpers';
 
 /**
+ * Get the initiate transition based on the payment method type and the last transition
+ * @param {String} paymentMethodType
+ * @param {String} lastTransition
+ * @param {Object} process
+ * @returns the initiate transition
+ */
+
+export const getInitiateTransition = (paymentMethodType, lastTransition, process) => {
+  if (paymentMethodType === 'ideal') {
+    return lastTransition === process.transitions.INQUIRE
+      ? process.transitions.REQUEST_PUSH_PAYMENT_AFTER_INQUIRY
+      : process.transitions.REQUEST_PUSH_PAYMENT;
+  }
+  return lastTransition === process.transitions.INQUIRE
+    ? process.transitions.REQUEST_PAYMENT_AFTER_INQUIRY
+    : process.transitions.REQUEST_PAYMENT;
+};
+
+/**
  * Extract relevant transaction type data from listing type
  * Note: this is saved to protectedData of the transaction entity
  *       therefore, we don't need the process name (nor alias)
@@ -194,7 +213,11 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     sessionStorageKey,
     stripeCustomer,
     stripePaymentMethodId,
+    onConfirmStock,
+    onClearAuthorCart,
   } = extraPaymentParams;
+  const { paymentMethodTypes = [] } = orderParams;
+  const isIdeal = paymentMethodTypes.includes('ideal');
   const storedTx = ensureTransaction(pageData.transaction);
 
   const ensuredStripeCustomer = ensureStripeCustomer(stripeCustomer);
@@ -216,10 +239,19 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
 
     const requestTransition =
       storedTx?.attributes?.lastTransition === process.transitions.INQUIRE
-        ? process.transitions.REQUEST_PAYMENT_AFTER_INQUIRY
+        ? getInitiateTransition(
+            isIdeal ? 'ideal' : 'card',
+            storedTx?.attributes?.lastTransition,
+            process
+          )
         : isOfferPendingInNegotiationProcess
         ? process.transitions.REQUEST_PAYMENT_TO_ACCEPT_OFFER
-        : process.transitions.REQUEST_PAYMENT;
+        : getInitiateTransition(
+            isIdeal ? 'ideal' : 'card',
+            storedTx?.attributes?.lastTransition,
+            process
+          );
+
     const isPrivileged = process.isPrivileged(requestTransition);
 
     // If paymentIntent exists, order has been initiated previously.
@@ -233,6 +265,17 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     });
 
     return orderPromise;
+  };
+
+  const fnConfirmStockMaybe = async fnParams => {
+    const order = fnParams;
+    if (
+      order.attributes.protectedData.providerCart &&
+      !order.attributes.metadata.childrenTransactionStockConfirmed
+    ) {
+      await onConfirmStock(order.id.uuid);
+    }
+    return fnParams;
   };
 
   //////////////////////////////////
@@ -253,12 +296,44 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
       ? order.attributes.protectedData.stripePaymentIntents.default
       : null;
 
-    const { stripe, card, billingDetails, paymentIntent } = extraPaymentParams;
+    const {
+      stripe,
+      card,
+      idealBank,
+      idealBankElement,
+      billingDetails,
+      paymentIntent,
+    } = extraPaymentParams;
     const stripeElementMaybe = !isPaymentFlowUseSavedCard ? { card } : {};
+    const redirectUrl = `${window.location.origin}/order/${order?.id.uuid}`;
 
     // Note: For basic USE_SAVED_CARD scenario, we have set it already on API side, when PaymentIntent was created.
     // However, the payment_method is save here for USE_SAVED_CARD flow if customer first attempted onetime payment
-    const paymentParams = !isPaymentFlowUseSavedCard
+    // For iDEAL, we can pass the element directly or the bank value
+    // According to Stripe docs: payment_method.ideal should be the element OR payment_method.ideal.bank should be the bank BIC string
+    const paymentParams = isIdeal
+      ? {
+          payment_method: idealBankElement
+            ? {
+                // Pass the element directly - Stripe will extract the selected bank from it
+                ideal: idealBankElement,
+                billing_details: billingDetails,
+              }
+            : idealBank
+            ? {
+                // Pass the bank BIC code as a string
+                ideal: {
+                  bank: idealBank,
+                },
+                billing_details: billingDetails,
+              }
+            : {
+                // Fallback: just billing details, Stripe might handle it
+                billing_details: billingDetails,
+              },
+          return_url: redirectUrl,
+        }
+      : !isPaymentFlowUseSavedCard
       ? {
           payment_method: {
             billing_details: billingDetails,
@@ -273,6 +348,7 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
       stripe,
       ...stripeElementMaybe,
       paymentParams,
+      mode: isIdeal ? 'ideal' : 'payment',
     };
 
     return hasPaymentIntentUserActionsDone
@@ -301,6 +377,14 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     });
 
     return orderPromise;
+  };
+
+  const fnClearAuthorCartMaybe = async order => {
+    if (order.attributes.protectedData.providerCart && order.attributes.protectedData.fromCart) {
+      const providerId = order?.relationships?.provider?.data?.id?.uuid;
+      await onClearAuthorCart(providerId);
+    }
+    return order;
   };
 
   //////////////////////////////////
@@ -343,8 +427,10 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   const composeAsync = (...funcs) => x => funcs.reduce(applyAsync, Promise.resolve(x));
   const handlePaymentIntentCreation = composeAsync(
     fnRequestPayment,
+    fnConfirmStockMaybe,
     fnConfirmCardPayment,
     fnConfirmPayment,
+    fnClearAuthorCartMaybe,
     fnSendMessage,
     fnSavePaymentMethod
   );

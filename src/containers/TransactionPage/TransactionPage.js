@@ -293,6 +293,7 @@ export const TransactionPageComponent = props => {
     nextTransitions,
     callSetInitialValues,
     onInitializeCardPaymentData,
+    transactionListings,
     ...restOfProps
   } = props;
 
@@ -395,6 +396,11 @@ export const TransactionPageComponent = props => {
     const seats = Number.parseInt(seatsRaw, 10);
     const seatsMaybe = Number.isInteger(seats) ? { seats } : {};
     const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
+    const providerCart = {
+      [listing.id.uuid]: {
+        quantity: quantityMaybe.quantity ?? 1,
+      },
+    };
 
     const initialValues = {
       listing,
@@ -407,6 +413,7 @@ export const TransactionPageComponent = props => {
         ...seatsMaybe,
         ...deliveryMethodMaybe,
         ...otherOrderData,
+        providerCart,
       },
       confirmPaymentError: null,
     };
@@ -658,6 +665,7 @@ export const TransactionPageComponent = props => {
       showBookingLocation={showBookingLocation}
       hasViewingRights={hasViewingRights}
       showListingImage={showListingImage}
+      transactionListings={transactionListings}
       actionButtons={
         <ActionButtons
           showButtons={stateData.showActionButtons}
@@ -885,7 +893,11 @@ const mapStateToProps = state => {
     fetchLineItemsError,
   } = state.TransactionPage;
   const { currentUser } = state.user;
-
+  const { queryTransactionListingsIds } = state.CheckoutPage;
+  const transactionListings = getMarketplaceEntities(
+    state,
+    queryTransactionListingsIds.map(id => ({ id, type: 'listing' }))
+  );
   const transactions = getMarketplaceEntities(state, transactionRef ? [transactionRef] : []);
   const transaction = transactions.length > 0 ? transactions[0] : null;
 
@@ -912,7 +924,8 @@ const mapStateToProps = state => {
     timeSlotsForDate, // for OrderPanel
     lineItems, // for OrderPanel
     fetchLineItemsInProgress, // for OrderPanel
-    fetchLineItemsError, // for OrderPanel
+    fetchLineItemsError, // for OrderPanel,
+    transactionListings, // for OrderPanel
   };
 };
 

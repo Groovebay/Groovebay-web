@@ -29,6 +29,10 @@
   }
 }
 
+.idealCard {
+  padding: 11px 16px 11px 16px;
+}
+
 .cardError {
   border: var(--borderErrorField);
 }
@@ -155,4 +159,23 @@
 
 .missingStripeKey {
   color: var(--colorFail);
+}
+
+.paymentMethodTypeSelect {
+  margin-bottom: 24px;
+}
+
+.cardContentHidden {
+  display: none;
+}
+
+.idealBankContainer {
+  margin-bottom: 48px;
+}
+
+.paymentLabel {
+  composes: h5 from global;
+  display: block;
+  color: var(--colorGrey700);
+  margin-bottom: 8px;
 }

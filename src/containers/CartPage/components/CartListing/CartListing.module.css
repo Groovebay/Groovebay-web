@@ -1,0 +1,114 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.rootForImage {
+  /* Layout - image will take space defined by aspect ratio wrapper */
+  width: 100%;
+  border: solid 1px var(--matterColorNegative);
+  border-radius: 4px;
+  height: 80px;
+  width: 80px;
+}
+
+.root {
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+}
+
+.itemLayout {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 10px;
+  @media (--viewportMedium) {
+    align-items: center;
+    flex-direction: row;
+    width: 50%;
+    margin-bottom: 0;
+  }
+}
+
+.titleLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titleLink {
+  font-weight: 600;
+  color: var(--marketplaceColor);
+}
+
+.error {
+  color: var(--colorFail);
+  margin-top: 4px;
+}
+
+.removeButton {
+  margin-right: auto;
+}
+
+.contentLayout {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.priceAndQuantityLayout {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  @media (--viewportMedium) {
+    width: 50%;
+    justify-content: space-between;
+  }
+}
+
+.quantityInput {
+  width: 40px;
+  text-align: center;
+  padding: 0;
+}
+
+.quantityLayout {
+  display: flex;
+  flex-direction: column;
+  width: 65%;
+  align-items: flex-start;
+  @media (--viewportMedium) {
+    justify-content: center;
+    width: 50%;
+  }
+}
+
+.priceLayout {
+  width: 100%;
+  text-align: right;
+  width: 50%;
+}
+
+.size {
+  font-size: 12px;
+  color: var(--colorGrey500);
+  @media (--viewportMedium) {
+    font-size: 14px;
+  }
+}
+
+.smallText {
+  font-size: 12px;
+  padding: 0;
+  margin: 0;
+}
+
+.listingDetailsText p {
+  margin: 0;
+}
+
+.listingDetailsText a {
+  margin: 0;
+}
