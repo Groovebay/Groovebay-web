@@ -1,0 +1,390 @@
+@import '../../../../../styles/customMediaQueries.css';
+
+.root {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden; /* Prevent horizontal overflow */
+  padding: 0;
+  margin: 0;
+  /* Ensure the carousel doesn't interfere with grid layout */
+  contain: layout style;
+  /* Ensure no content can exceed viewport bounds */
+  box-sizing: border-box;
+
+  /* Force strict containment on all screen sizes */
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+
+  @media (max-width: 550px) {
+    /* Keep overflow hidden to prevent page-wide horizontal scroll */
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+    /* But allow internal carousel overflow with proper containment */
+    contain: layout;
+    /* Ensure strict width constraints */
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* Wrapper to handle navigation positioning */
+.carouselWrapper {
+  position: relative;
+  padding: 0 50px; /* Space for navigation buttons */
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Ensure proper containment */
+  overflow: hidden !important;
+  overflow-x: hidden !important;
+
+  @media (max-width: 768px) {
+    padding: 0 42px;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+  }
+
+  @media (max-width: 550px) {
+    padding: 0 36px;
+    /* Allow controlled overflow for partial slide preview */
+    overflow: visible;
+    position: relative;
+    width: 100% !important;
+    max-width: 100% !important;
+    /* Ensure the wrapper itself doesn't extend beyond viewport */
+    contain: layout;
+  }
+}
+
+/* Single slide container for when only one item */
+.singleSlide {
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+  max-width: 100%;
+}
+
+/* Embla container */
+.embla {
+  width: 100% !important;
+  height: auto;
+  overflow: hidden !important; /* Always prevent overflow */
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+
+  @media (max-width: 550px) {
+    /* Allow controlled overflow for partial slide preview */
+    overflow: visible;
+    padding-right: 0;
+    max-width: 100% !important;
+    width: 100% !important;
+    /* Ensure slides don't exceed reasonable bounds */
+    contain: layout;
+  }
+}
+
+/* Embla container that holds all slides */
+.emblaContainer {
+  display: flex;
+  gap: var(--slide-spacing, 16px);
+  margin-left: calc(var(--slide-spacing, 16px) * -1);
+  touch-action: pan-y pinch-zoom;
+
+  @media (max-width: 550px) {
+    gap: 12px;
+    margin-left: -12px;
+  }
+
+  @media (max-width: 768px) and (min-width: 551px) {
+    gap: 14px;
+    margin-left: -14px;
+  }
+}
+
+/* Embla slide styling */
+.emblaSlide {
+  height: auto;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  padding-left: var(--slide-spacing, 16px);
+
+  /* Responsive slide widths - show partial next item when there are more items */
+  width: calc(
+    (100% - ((var(--slides-per-view, 1) - 1) * var(--slide-spacing, 16px))) /
+      var(--slides-per-view, 1)
+  );
+  min-width: 0;
+
+  @media (--viewportMedium) {
+    width: calc(
+      (100% - ((var(--slides-per-view, 4) - 1) * var(--slide-spacing, 16px))) /
+        var(--slides-per-view, 4)
+    );
+    padding-left: 16px;
+  }
+}
+
+/* Ensure ListingCard images are properly constrained within slides */
+.emblaSlide > * {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Target the ListingCard component within slides */
+.emblaSlide > :first-child {
+  width: 100%;
+  max-width: 100%;
+
+  /* Constrain the aspect ratio wrapper */
+  & > div:first-child {
+    width: 100%;
+    max-width: 100%;
+
+    @media (max-width: 550px) {
+      max-height: 200px; /* Reasonable max height for mobile */
+    }
+
+    @media (max-width: 768px) and (min-width: 551px) {
+      max-height: 180px; /* Tablet constraints */
+    }
+
+    @media (max-width: 1024px) and (min-width: 769px) {
+      max-height: 200px; /* Large tablet constraints */
+    }
+  }
+
+  /* Target images within the aspect ratio wrapper */
+  & img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    max-width: 100% !important;
+  }
+}
+
+/* Custom navigation buttons */
+.customArrow {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #333;
+  cursor: pointer;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+
+  /* Ensure SVG icons are properly sized in all browsers */
+  & svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: block;
+
+    @media (max-width: 768px) {
+      width: 18px;
+      height: 18px;
+    }
+
+    @media (max-width: 550px) {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  &:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.95);
+      color: #333;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+.prevArrow {
+  left: 5px;
+
+  @media (max-width: 768px) {
+    left: 12px;
+    width: 36px;
+    height: 36px;
+  }
+
+  @media (max-width: 550px) {
+    left: 12px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.nextArrow {
+  right: 5px;
+
+  @media (max-width: 768px) {
+    right: 12px;
+    width: 36px;
+    height: 36px;
+  }
+
+  @media (max-width: 550px) {
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Embla navigation button classes */
+.emblaButtonNext,
+.emblaButtonPrev {
+  /* These classes are used for Embla navigation */
+}
+
+/* Custom pagination */
+.emblaPagination {
+  position: relative !important;
+  margin-top: 20px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.paginationDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--colorGrey300);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin: 0;
+
+  &:hover {
+    background-color: var(--colorGrey500);
+  }
+
+  &:focus {
+    outline: 2px solid var(--marketplaceColor);
+    outline-offset: 2px;
+  }
+}
+
+.paginationDotActive {
+  background-color: var(--marketplaceColor);
+  transform: scale(1.2);
+}
+
+/* Responsive adjustments for the entire carousel */
+@media (max-width: 550px) {
+  .root {
+    /* Prevent horizontal page scroll */
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .carouselWrapper {
+    /* Reduce padding on mobile to maximize content space */
+    padding: 0 16px;
+    /* Ensure wrapper doesn't exceed viewport */
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .embla {
+    /* Contain within wrapper bounds */
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 551px) {
+  .carouselWrapper {
+    padding: 0 24px;
+  }
+
+  .embla {
+    max-width: 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 769px) {
+  .carouselWrapper {
+    padding: 0 48px;
+  }
+}
+
+/* Loading and error states */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--colorGrey500);
+}
+
+.error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: var(--colorFail);
+}
+
+/* Accessibility improvements */
+.customArrow:focus-visible {
+  outline: 2px solid var(--marketplaceColor);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .customArrow {
+    background-color: white;
+    border: 2px solid black;
+    color: black;
+
+    &:hover {
+      background-color: black;
+      color: white;
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .customArrow,
+  .paginationDot {
+    transition: none;
+  }
+
+  .embla {
+    /* Reduced motion users will have smoother experience without autoplay */
+  }
+}

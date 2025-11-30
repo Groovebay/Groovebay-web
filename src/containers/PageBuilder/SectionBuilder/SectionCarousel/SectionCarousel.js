@@ -6,6 +6,7 @@ import BlockBuilder from '../../BlockBuilder';
 
 import SectionContainer from '../SectionContainer';
 import css from './SectionCarousel.module.css';
+import CustomCarousel from './CustomCarousel';
 
 const KEY_CODE_ARROW_LEFT = 37;
 const KEY_CODE_ARROW_RIGHT = 39;
@@ -84,8 +85,14 @@ const SectionCarousel = props => {
   const sliderId = `${props.sectionId}-slider`;
   const numberOfBlocks = blocks?.length;
   const hasBlocks = numberOfBlocks > 0;
+  const isCustomCarouselSection =
+    sectionId.includes('featured-listings') || sectionId.includes('recent-listings');
 
   useEffect(() => {
+    if (isCustomCarouselSection) {
+      return;
+    }
+
     const setCarouselWidth = () => {
       if (hasBlocks) {
         const windowWidth = window.innerWidth;
@@ -102,7 +109,7 @@ const SectionCarousel = props => {
 
     window.addEventListener('resize', setCarouselWidth);
     return () => window.removeEventListener('resize', setCarouselWidth);
-  }, []);
+  }, [isCustomCarouselSection]);
 
   // If external mapping has been included for fields
   // E.g. { h1: { component: MyAwesomeHeader } }
@@ -154,7 +161,9 @@ const SectionCarousel = props => {
           <Field data={callToAction} className={defaultClasses.ctaButton} options={fieldOptions} />
         </header>
       ) : null}
-      {hasBlocks ? (
+      {isCustomCarouselSection ? (
+        <CustomCarousel sectionId={sectionId} blocks={blocks} numColumns={numColumns} />
+      ) : hasBlocks ? (
         <div className={css.carouselContainer} id={sliderContainerId}>
           <div
             className={classNames(css.carouselArrows, {

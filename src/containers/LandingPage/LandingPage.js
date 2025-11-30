@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect } from 'react';
 import loadable from '@loadable/component';
 
 import { bool, object } from 'prop-types';
@@ -9,14 +9,27 @@ import { camelize } from '../../util/string';
 import { propTypes } from '../../util/types';
 
 import FallbackPage from './FallbackPage';
-import { ASSET_NAME } from './LandingPage.duck';
+import { ASSET_NAME, searchFeaturedListings, searchRecentListings } from './LandingPage.duck';
+import { useConfiguration } from '../../context/configurationContext';
 
 const PageBuilder = loadable(() =>
   import(/* webpackChunkName: "PageBuilder" */ '../PageBuilder/PageBuilder')
 );
 
 export const LandingPageComponent = props => {
-  const { pageAssetsData, inProgress, error } = props;
+  const {
+    pageAssetsData,
+    inProgress,
+    error,
+    onSearchFeaturedListings,
+    onSearchRecentListings,
+  } = props;
+  const config = useConfiguration();
+
+  useEffect(() => {
+    onSearchFeaturedListings(config);
+    onSearchRecentListings(config);
+  }, [onSearchFeaturedListings, onSearchRecentListings, config]);
 
   return (
     <PageBuilder
@@ -39,12 +52,22 @@ const mapStateToProps = state => {
   return { pageAssetsData, inProgress, error };
 };
 
+const mapDispatchToProps = dispatch => ({
+  onSearchFeaturedListings: config => dispatch(searchFeaturedListings(config)),
+  onSearchRecentListings: config => dispatch(searchRecentListings(config)),
+});
+
 // Note: it is important that the withRouter HOC is **outside** the
 // connect HOC, otherwise React Router won't rerender any Route
 // components since connect implements a shouldComponentUpdate
 // lifecycle hook.
 //
 // See: https://github.com/ReactTraining/react-router/issues/4671
-const LandingPage = compose(connect(mapStateToProps))(LandingPageComponent);
+const LandingPage = compose(
+  connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )
+)(LandingPageComponent);
 
 export default LandingPage;
