@@ -205,7 +205,7 @@ const FilterComponent = props => {
           onSubmit={getHandleChangedValueFn(useHistoryPush)}
           options={enumOptions}
           schemaType={schemaType}
-          searchMode={searchMode}
+          searchMode={'has_any'}
           {...rest}
         />
       );
