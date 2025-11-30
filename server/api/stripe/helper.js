@@ -15,7 +15,7 @@ const confirmPaymentTransition = async data => {
 
     const txRes = await iSdk.transactions.show({
       id: metadata['sharetribe-transaction-id'],
-      include: ['provider', 'listing'],
+      include: ['provider', 'listing', 'customer'],
     });
 
     const [transaction] = denormalisedResponseEntities(txRes);
@@ -26,13 +26,14 @@ const confirmPaymentTransition = async data => {
       params: {},
     });
 
-    const currentCart = transaction?.provider?.attributes?.profile?.privateData?.cart;
+    const currentCart = transaction?.customer?.attributes?.profile?.privateData?.cart;
     const providerId = transaction?.provider?.id?.uuid;
+    const customerId = transaction?.customer?.id?.uuid;
     if (currentCart && currentCart[providerId]) {
       delete currentCart[providerId];
     }
     await iSdk.users.updateProfile({
-      id: providerId,
+      id: customerId,
       privateData: {
         cart: currentCart,
       },
