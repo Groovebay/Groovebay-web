@@ -599,7 +599,7 @@ class StripePaymentForm extends Component {
       invalid ||
       (onetimePaymentNeedsAttention && !isIdeal) ||
       submitInProgress ||
-      (isIdeal && !this.state.idealBankValue && !hasHandledIdealPayment);
+      (isIdeal && !!hasHandledIdealPayment && !hasHandledIdealPayment);
     const hasCardError = this.state.error && !submitInProgress;
     const hasPaymentErrors = confirmCardPaymentError || confirmPaymentError;
     const classes = classNames(rootClassName || css.root, className);
@@ -740,50 +740,6 @@ class StripePaymentForm extends Component {
         </p>
       ) : null;
 
-    const idealContent =
-      isIdeal && billingDetailsNeeded && !loadingData ? (
-        <div className={css.idealBankContainer}>
-          <label className={css.paymentLabel} htmlFor={`${formId}-ideal-bank`}>
-            <FormattedMessage id="StripePaymentForm.idealBankLabel" />
-          </label>
-          <div
-            className={cardClasses}
-            id={`${formId}-ideal-bank`}
-            ref={this.handleIdealBankElementRef}
-          />
-          {billingDetailsNeeded ? (
-            <div className={css.billingDetails}>
-              <Heading as="h3" rootClassName={css.heading}>
-                <FormattedMessage id="StripePaymentForm.billingDetails" />
-              </Heading>
-              {askShippingDetails ? (
-                <FieldCheckbox
-                  className={css.sameAddressCheckbox}
-                  textClassName={css.sameAddressLabel}
-                  id="sameAddressCheckbox"
-                  name="sameAddressCheckbox"
-                  label={intl.formatMessage({
-                    id: 'StripePaymentForm.sameBillingAndShippingAddress',
-                  })}
-                  value="sameAddress"
-                  useSuccessColor
-                  onChange={handleSameAddressCheckbox}
-                />
-              ) : null}
-              <FieldTextInput
-                className={css.field}
-                type="text"
-                id="name"
-                name="name"
-                autoComplete="cc-name"
-                label={billingDetailsNameLabel}
-                placeholder={billingDetailsNamePlaceholder}
-              />
-              {billingAddress}
-            </div>
-          ) : null}
-        </div>
-      ) : null;
     return hasStripeKey ? (
       <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
         <LocationOrShippingDetails
@@ -812,13 +768,6 @@ class StripePaymentForm extends Component {
           </option>
         </FieldSelect>
 
-        {billingDetailsNeeded && !loadingData && (
-          <Heading as="h3" rootClassName={css.heading}>
-            <FormattedMessage id="StripePaymentForm.idealBankHeading" />
-          </Heading>
-        )}
-
-        {idealContent}
         {/* cardContent : should be hidden by css, not conditionally because makes the stripe elements card element rerender multiple times the card will not working anymore*/}
         <div
           className={classNames(css.cardContent, {

@@ -313,24 +313,10 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     // According to Stripe docs: payment_method.ideal should be the element OR payment_method.ideal.bank should be the bank BIC string
     const paymentParams = isIdeal
       ? {
-          payment_method: idealBankElement
-            ? {
-                // Pass the element directly - Stripe will extract the selected bank from it
-                ideal: idealBankElement,
-                billing_details: billingDetails,
-              }
-            : idealBank
-            ? {
-                // Pass the bank BIC code as a string
-                ideal: {
-                  bank: idealBank,
-                },
-                billing_details: billingDetails,
-              }
-            : {
-                // Fallback: just billing details, Stripe might handle it
-                billing_details: billingDetails,
-              },
+          payment_method: {
+            billing_details: billingDetails,
+            ideal: {},
+          },
           return_url: redirectUrl,
         }
       : !isPaymentFlowUseSavedCard
