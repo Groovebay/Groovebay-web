@@ -418,11 +418,15 @@ const OrderPanel = props => {
   };
 
   const handleUpdateCart = ({ quantity }) => {
-    updateCart({
-      providerId: listing.author.id.uuid,
-      listingId: listing.id.uuid,
-      quantity: Number(quantity),
-    });
+    if (isOwnListing) {
+      window.scrollTo(0, 0);
+    } else {
+      return updateCart({
+        providerId: listing.author.id.uuid,
+        listingId: listing.id.uuid,
+        quantity: Number(quantity),
+      });
+    }
   };
   const currentListingQuantityInCart =
     cart[listing.author.id.uuid]?.[listing.id.uuid]?.quantity ?? 0;

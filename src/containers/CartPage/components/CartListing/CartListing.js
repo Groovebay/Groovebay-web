@@ -14,7 +14,15 @@ import { debounce } from 'lodash';
 import { createSlug } from '../../../../util/urlHelpers';
 
 const CartListing = props => {
-  const { listing, removeFromCart, removeError, className, updateQuantity, quantity } = props;
+  const {
+    listing,
+    removeFromCart,
+    removeError,
+    className,
+    updateQuantity,
+    quantity,
+    allowOrdersOfMultipleItems,
+  } = props;
   const { title, price } = listing.attributes;
   const intl = useIntl();
 
@@ -61,12 +69,14 @@ const CartListing = props => {
           </div>
           <div className={css.priceAndQuantityLayout}>
             <div className={css.quantityLayout}>
-              <QuantitySelector
-                quantity={quantity}
-                onQuantityChange={handleQuantityChange}
-                maxQuantity={actualStock}
-                disabled={reachStock}
-              />
+              {allowOrdersOfMultipleItems ? (
+                <QuantitySelector
+                  quantity={quantity}
+                  onQuantityChange={handleQuantityChange}
+                  maxQuantity={actualStock}
+                  disabled={reachStock}
+                />
+              ) : null}
               {!actualStock ? (
                 <p className={classNames(css.error, css.smallText)}>
                   <FormattedMessage id="CartCard.outOfStock" />
@@ -90,10 +100,6 @@ const CartListing = props => {
       ) : null}
     </div>
   );
-};
-
-CartListing.defaultProps = {
-  listing: null,
 };
 
 export default CartListing;
