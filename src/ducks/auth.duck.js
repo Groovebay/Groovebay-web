@@ -1,8 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import * as log from '../util/log';
 import { storableError } from '../util/errors';
-import { clearCurrentUser, fetchCurrentUser } from './user.duck';
+import { clearCurrentUser, fetchCurrentUser, updateCurrentUserProfileThunk } from './user.duck';
 import { createUserWithIdp } from '../util/api';
+import { setCart } from './cart.duck';
+import isEmpty from 'lodash/isEmpty';
 
 const authenticated = authInfo => authInfo?.isAnonymous === false;
 const loggedInAs = authInfo => authInfo?.isLoggedInAs === true;
@@ -60,9 +62,29 @@ const loginThunk = createAsyncThunk(
 
     return sdk
       .login({ username, password })
-      .then(() => {
-        return dispatch(fetchCurrentUser({ afterLogin: true }));
+      .then(async () => {
+        const cartFromLocalStorage = localStorage.getItem('cart');
+        const currentUser = await dispatch(fetchCurrentUser({ afterLogin: true }));
+        const currentUserId = currentUser?.id?.uuid;
+        const cart = cartFromLocalStorage ? JSON.parse(cartFromLocalStorage) : {};
+        if (!isEmpty(cart)) {
+          delete cart[currentUserId];
+          dispatch(setCart({ ...cart }));
+          await dispatch(
+            updateCurrentUserProfileThunk({
+              data: {
+                privateData: { cart },
+              },
+              options: {
+                expand: true,
+              },
+            })
+          );
+          await dispatch(fetchCurrentUser({ enforce: true }));
+          localStorage.removeItem('cart');
+        }
       })
+
       .then(() => ({ username, password }))
       .catch(e => rejectWithValue(storableError(e)));
   },

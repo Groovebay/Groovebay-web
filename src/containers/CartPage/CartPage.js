@@ -16,6 +16,7 @@ import { handleSubmit } from '../ListingPage/ListingPage.shared';
 import { useHistory } from 'react-router-dom';
 import { initializeCardPaymentData } from '../../ducks/stripe.duck';
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
+import { STOCK_INFINITE_MULTIPLE_ITEMS, STOCK_MULTIPLE_ITEMS } from '../../util/types';
 
 const { Money } = sdkTypes;
 
@@ -45,6 +46,7 @@ const renderCartListings = props => {
     onRemoveFromCart,
     updateCartError,
     onCheckout,
+    validListingTypes,
   } = props;
   if (!cartListings.length) {
     return null;
@@ -78,9 +80,18 @@ const renderCartListings = props => {
         (listingCart?.quantity ?? 0) * (listing?.attributes?.price?.amount ?? 0);
       listingCurrency = listing?.attributes?.price?.currency;
       providerTotalItems += listingCart?.quantity ?? 0;
+      const listingTypeConfig = validListingTypes.find(
+        conf => conf.listingType === listing?.attributes?.publicData?.listingType
+      );
+      const allowOrdersOfMultipleItems = [
+        STOCK_MULTIPLE_ITEMS,
+        STOCK_INFINITE_MULTIPLE_ITEMS,
+      ].includes(listingTypeConfig?.stockType);
+
       providerItems.push({
         listing,
         quantity: listingCart?.quantity,
+        allowOrdersOfMultipleItems,
       });
     });
 
@@ -222,6 +233,7 @@ const CartPage = () => {
                 onRemoveFromCart,
                 sizeEnumOptions,
                 onCheckout,
+                validListingTypes: config.listing.listingTypes,
               })}
             </div>
           ) : (

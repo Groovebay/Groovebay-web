@@ -284,24 +284,28 @@ const renderForm = formRenderProps => {
       <FetchLineItemsError error={fetchLineItemsError} />
 
       <div className={css.submitButton}>
-        <PrimaryButton
-          type="button"
-          inProgress={updateCartInProgress}
-          disabled={updateCartInProgress}
-          onClick={() => {
-            setSubmittedValues({ ...values, quantity: Number(values.quantity) });
-            updateCart({ ...values, quantity: Number(values.quantity) });
-          }}
-          ready={cartReady}
-        >
-          {alreadyInCart && values.quantity === 0 ? (
-            <FormattedMessage id="ProductOrderForm.removeFromCart" />
-          ) : alreadyInCart ? (
-            <FormattedMessage id="ProductOrderForm.updateCart" />
-          ) : (
-            <FormattedMessage id="ProductOrderForm.addToCart" />
-          )}
-        </PrimaryButton>
+        {!hasStock ? null : (
+          <PrimaryButton
+            type="button"
+            inProgress={updateCartInProgress}
+            disabled={updateCartInProgress}
+            onClick={() => {
+              if (!isOwnListing) {
+                setSubmittedValues({ ...values, quantity: Number(values.quantity) });
+              }
+              updateCart({ ...values, quantity: Number(values.quantity) });
+            }}
+            ready={cartReady}
+          >
+            {alreadyInCart && values.quantity === 0 ? (
+              <FormattedMessage id="ProductOrderForm.removeFromCart" />
+            ) : alreadyInCart ? (
+              <FormattedMessage id="ProductOrderForm.updateCart" />
+            ) : (
+              <FormattedMessage id="ProductOrderForm.addToCart" />
+            )}
+          </PrimaryButton>
+        )}
         <SecondaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
           {hasStock ? (
             <FormattedMessage id="ProductOrderForm.ctaButton" />
@@ -387,7 +391,7 @@ const ProductOrderForm = props => {
       : {};
   const hasMultipleDeliveryMethods = pickupEnabled && shippingEnabled;
   const initialValues = { ...quantityMaybe, ...deliveryMethodMaybe };
-  console.log({ initialValues });
+
   return (
     <FinalForm
       initialValues={initialValues}
