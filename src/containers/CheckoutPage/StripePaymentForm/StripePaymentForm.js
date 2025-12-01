@@ -760,11 +760,11 @@ class StripePaymentForm extends Component {
           name="paymentMethodType"
           label={intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeLabel' })}
         >
-          <option value="card">
-            {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeCard' })}
-          </option>
           <option value="ideal">
             {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeIdeal' })}
+          </option>
+          <option value="card">
+            {intl.formatMessage({ id: 'StripePaymentForm.paymentMethodTypeCard' })}
           </option>
         </FieldSelect>
 

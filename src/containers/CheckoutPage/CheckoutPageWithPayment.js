@@ -566,7 +566,7 @@ export const CheckoutPageWithPayment = props => {
   const initialValuesForStripePayment = {
     name: userName,
     recipientName: userName,
-    paymentMethodType: defaultPaymentMethodType || 'card',
+    paymentMethodType: defaultPaymentMethodType || 'ideal',
   };
   const askShippingDetails =
     orderData?.deliveryMethod === 'shipping' &&

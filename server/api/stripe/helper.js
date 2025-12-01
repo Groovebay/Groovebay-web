@@ -27,17 +27,20 @@ const confirmPaymentTransition = async data => {
     });
 
     const currentCart = transaction?.customer?.attributes?.profile?.privateData?.cart;
+    const fromCart = transaction?.attributes?.protectedData?.fromCart;
     const providerId = transaction?.provider?.id?.uuid;
     const customerId = transaction?.customer?.id?.uuid;
-    if (currentCart && currentCart[providerId]) {
-      delete currentCart[providerId];
+    if (fromCart) {
+      if (currentCart && currentCart[providerId]) {
+        delete currentCart[providerId];
+      }
+      await iSdk.users.updateProfile({
+        id: customerId,
+        privateData: {
+          cart: currentCart,
+        },
+      });
     }
-    await iSdk.users.updateProfile({
-      id: customerId,
-      privateData: {
-        cart: currentCart,
-      },
-    });
   } catch (error) {
     console.log('Failed to update confirm payment transition', error.data.errors);
   }
