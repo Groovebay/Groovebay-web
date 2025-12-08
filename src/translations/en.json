@@ -1468,5 +1468,7 @@
   "CheckoutPage.loadingBreakdown": "Please wait as we retrieve the latest breakdown...",
   "UserFieldPhoneNumber.phoneNumberRequired": "Phone number is required",
   "UserFieldPhoneNumber.phoneNumberInvalid": "Invalid phone number",
-  "TransactionPanel.weArePreparingYourOrder": "We are preparing shipping label for your order..."
+  "TransactionPanel.weArePreparingYourOrder": "We are preparing shipping label for your order...",
+  "ShippingMethodForm.customerShippingAddressNotFound": "Customer shipping address not found. Please update your shipping address.",
+  "ShippingMethodForm.providerShippingAddressNotFound": "Provider shipping address not found. Please contact to {marketplaceName} support."
 }

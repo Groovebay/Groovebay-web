@@ -89,7 +89,7 @@ module.exports = async (req, res) => {
         protectedData: {
           ...params.protectedData,
           formattedLineItems: formatLineItems(lineItems, listings),
-          shippingRate,
+          ...(shippingRate ? { shippingRate } : {}),
         },
       },
     };

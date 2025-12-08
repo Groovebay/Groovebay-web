@@ -324,6 +324,7 @@ const speculateTransactionPayloadCreator = (
   const priceVariantNameMaybe = priceVariantName ? { priceVariantName } : {};
   const fromCartMaybe = fromCart ? { fromCart } : {};
   const shippingRateIdMaybe = shippingRateId ? { shippingRateId } : {};
+
   // Parameters only for client app's server
   const orderData = {
     ...deliveryMethodMaybe,
@@ -632,7 +633,7 @@ const checkoutPageSlice = createSlice({
       })
       .addCase(queryTransactionListingsThunk.rejected, (state, action) => {
         state.queryTransactionListingsInProgress = false;
-        state.queryTransactionListingsError = action.payload;
+        state.queryTransactionListingsError = action.error;
       })
       // Get Shipping Rates cases
       .addCase(getShippingRatesThunk.pending, state => {
@@ -646,7 +647,7 @@ const checkoutPageSlice = createSlice({
       })
       .addCase(getShippingRatesThunk.rejected, (state, action) => {
         state.getShippingRatesInProgress = false;
-        state.getShippingRatesError = action.payload;
+        state.getShippingRatesError = action.error;
       })
       // Create Shipment cases
       .addCase(createShipmentThunk.pending, state => {
@@ -658,7 +659,7 @@ const checkoutPageSlice = createSlice({
       })
       .addCase(createShipmentThunk.rejected, (state, action) => {
         state.createShipmentInProgress = false;
-        state.createShipmentError = action.payload;
+        state.createShipmentError = action.error;
       });
   },
 });

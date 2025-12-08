@@ -36,6 +36,55 @@ const getShippingRates = async (req, res) => {
       error.statusText = 'Bad Request';
       throw error;
     }
+    // Validate addresses using MyParcel Address API
+    try {
+      const [customerValidation, providerValidation] = await Promise.all([
+        ShippingServices.addresses.validate({
+          countryCode: customerAddress.cc || 'NL',
+          postalCode: customerAddress.postal_code,
+          city: customerAddress.city,
+          houseNumber: customerAddress.number,
+          street: customerAddress.street,
+          region: customerAddress.region,
+        }),
+        ShippingServices.addresses.validate({
+          countryCode: providerAddress.cc || 'NL',
+          postalCode: providerAddress.postal_code,
+          city: providerAddress.city,
+          houseNumber: providerAddress.number,
+          street: providerAddress.street,
+          region: providerAddress.region,
+        }),
+      ]);
+
+      if (!customerValidation.valid) {
+        const error = new Error('Customer shipping address not found');
+        error.status = 400;
+        error.statusText = 'customer_shipping_address_not_found';
+        error.data = {
+          message: 'Customer shipping address not found',
+        };
+        throw error;
+      }
+
+      if (!providerValidation.valid) {
+        const error = new Error('Provider shipping address not found');
+        error.status = 400;
+        error.statusText = 'provider_shipping_address_not_found';
+        error.data = {
+          message: 'Provider shipping address not found',
+        };
+        throw error;
+      }
+    } catch (validationError) {
+      // If validation fails due to API error, log but continue
+      // If validation fails due to invalid address, throw error
+      if (validationError.status === 400) {
+        throw validationError;
+      }
+      console.error('Address validation error:', validationError.message);
+      // Continue with rate calculation even if validation API fails
+    }
 
     const totalWeight = Math.max(
       Object.values(providerCart).reduce(
@@ -49,7 +98,6 @@ const getShippingRates = async (req, res) => {
     // Send response
     const status = 200;
     const statusText = 'OK';
-    console.log({ rates });
     res
       .status(status)
       .set('Content-Type', 'application/transit+json')

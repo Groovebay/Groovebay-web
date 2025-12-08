@@ -46,7 +46,6 @@ const createShipment = async (req, res) => {
       ],
     },
   };
-
   const response = await ShippingServices.shipments.create(shipmentData);
   if (sync) {
     const shipmentId = response?.data?.ids?.[0]?.id;
@@ -54,9 +53,15 @@ const createShipment = async (req, res) => {
       shipmentId,
     });
   }
-  res.status(200).json({
-    shipmentData,
-  });
+  res.status(200).send(
+    serialize({
+      status: 200,
+      statusText: 'OK',
+      data: {
+        message: 'Shipment created successfully',
+      },
+    })
+  );
 };
 
 module.exports = createShipment;

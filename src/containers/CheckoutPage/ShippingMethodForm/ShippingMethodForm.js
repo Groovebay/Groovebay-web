@@ -6,6 +6,22 @@ import { PrimaryButton } from '../../../components';
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
 import { formatMoneyFromNumber } from '../../../util/currency';
 import IconCarrier from '../../../components/IconCarrier/IconCarrier';
+import { useConfiguration } from '../../../context/configurationContext';
+
+const getErrorMessage = (error, marketplaceName) => {
+  if (error.statusText === 'customer_shipping_address_not_found') {
+    return <FormattedMessage id="ShippingMethodForm.customerShippingAddressNotFound" />;
+  }
+  if (error.statusText === 'provider_shipping_address_not_found') {
+    return (
+      <FormattedMessage
+        id="ShippingMethodForm.providerShippingAddressNotFound"
+        values={{ marketplaceName }}
+      />
+    );
+  }
+  return error.message;
+};
 
 /**
  * @param {Object} props
@@ -24,16 +40,23 @@ const ShippingMethodForm = ({
   selectedShippingRate,
   onNextStep,
   disabledNextStep,
+  getShippingRatesError,
 }) => {
   const intl = useIntl();
+  const config = useConfiguration();
+  const marketplaceName = config?.marketplaceName;
 
   if (getShippingRatesInProgress) {
     return <Spinner />;
   }
-  console.log({ shippingRates });
+
   return (
     <div className={css.ratesContainer}>
-      {shippingRates.length === 0 ? (
+      {getShippingRatesError ? (
+        <div className={classNames(css.error, css.shippingAddressNotFound)}>
+          {getErrorMessage(getShippingRatesError, marketplaceName)}
+        </div>
+      ) : shippingRates.length === 0 ? (
         <div className={css.noRates}>
           <FormattedMessage id="ShippingMethodForm.noRates" />
         </div>

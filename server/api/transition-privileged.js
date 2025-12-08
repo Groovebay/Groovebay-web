@@ -16,6 +16,8 @@ const {
   fetchCommission,
 } = require('../api-util/sdk');
 const { denormalisedResponseEntities } = require('../api-util/format');
+const { ShippingServices } = require('../services');
+const { createStockReservationTransactions } = require('../api-util/transactionHelpers');
 
 const { Money } = sharetribeSdk.types;
 
@@ -96,12 +98,16 @@ module.exports = async (req, res) => {
       orderData.currency;
     const { providerCommission, customerCommission } =
       commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
+    const shippingRate = orderData.shippingRateId
+      ? await ShippingServices.rates.get(orderData.shippingRateId)
+      : null;
 
     lineItems = transactionLineItems(
       [listing],
       getFullOrderData(orderData, bodyParams, currency, existingOffers),
       providerCommission,
-      customerCommission
+      customerCommission,
+      shippingRate
     );
 
     metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
@@ -119,8 +125,9 @@ module.exports = async (req, res) => {
         lineItems,
         ...metadataMaybe,
         protectedData: {
-          ...params.protectedData,
+          ...restParams.protectedData,
           formattedLineItems: formatLineItems(lineItems, [listing]),
+          ...(shippingRate ? { shippingRate } : {}),
         },
       },
     };
@@ -130,8 +137,9 @@ module.exports = async (req, res) => {
       : await trustedSdk.transactions.transition(body, queryParams);
 
     if (orderData.providerCart && !isSpeculative) {
-      apiResponse = await updateStockReservationTransactions({
-        tx: denormalisedResponseEntities(apiResponse)[0],
+      const [tx] = denormalisedResponseEntities(apiResponse);
+      apiResponse = await createStockReservationTransactions({
+        tx,
         sdk: trustedSdk,
       });
     }

@@ -3,7 +3,6 @@ const { fetchCommission } = require('./sdk');
 
 const fetchListingsAndCommission = async (sdk, orderData, bodyParams, isOwnListing) => {
   const showSdk = isOwnListing ? sdk.ownListings.show : sdk.listings.show;
-  console.log({ orderData });
   const listingPromises = () => {
     if (orderData.providerCart) {
       return Promise.all(
