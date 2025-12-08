@@ -40,6 +40,7 @@ const TermsOfServicePage = loadable(() => import(/* webpackChunkName: "TermsOfSe
 const TransactionPage = loadable(() => import(/* webpackChunkName: "TransactionPage" */ '../containers/TransactionPage/TransactionPage'));
 const NoAccessPage = loadable(() => import(/* webpackChunkName: "NoAccessPage" */ '../containers/NoAccessPage/NoAccessPage'));
 const CartPage = loadable(() => import(/* webpackChunkName: "CartPage" */ '../containers/CartPage/CartPage'));
+const ShippingAddressPage = loadable(() => import(/* webpackChunkName: "ShippingAddressPage" */ '../containers/ShippingAddressPage/ShippingAddressPage'));
 
 // Styleguide helps you to review current components and develop new ones
 const StyleguidePage = loadable(() => import(/* webpackChunkName: "StyleguidePage" */ '../containers/StyleguidePage/StyleguidePage'));
@@ -49,7 +50,8 @@ export const ACCOUNT_SETTINGS_PAGES = [
   'PasswordChangePage',
   'StripePayoutPage',
   'PaymentMethodsPage',
-  'ManageAccountPage'
+  'ManageAccountPage',
+  'ShippingAddressPage'
 ];
 
 // https://en.wikipedia.org/wiki/Universally_unique_identifier#Nil_UUID
@@ -444,6 +446,14 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       path: '/preview',
       name: 'PreviewResolverPage',
       component: PreviewResolverPage ,
+    },
+    {
+      path: '/account/shipping-address',
+      name: 'ShippingAddressPage',
+      auth: true,
+      authPage: 'LoginPage',
+      component: ShippingAddressPage,
+      loadData: pageDataLoadingAPI.ShippingAddressPage.loadData,
     },
   ];
 };

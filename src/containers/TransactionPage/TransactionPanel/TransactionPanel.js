@@ -181,6 +181,7 @@ export class TransactionPanelComponent extends Component {
       config,
       hasViewingRights,
       transactionListings,
+      shipmentLabelUrl,
     } = this.props;
     const isPurchaseProcess = isPurchaseProcessFn(stateData.processName);
 
@@ -386,6 +387,7 @@ export class TransactionPanelComponent extends Component {
                   </p>
                 ) : null}
                 <DeliveryInfoMaybe
+                  shipmentLabelUrl={shipmentLabelUrl}
                   className={css.deliveryInfoSection}
                   protectedData={protectedData}
                   listing={listing}

@@ -96,7 +96,7 @@ const tabsForListingType = (processName, listingTypeConfig) => {
   //         Details tab asks for "title" and is therefore the first tab in the wizard flow.
   const tabs = {
     ['default-booking']: [DETAILS, ...locationMaybe, PRICING, AVAILABILITY, ...styleOrPhotosTab],
-    ['default-purchase']: [DETAILS, PRICING_AND_STOCK, ...deliveryMaybe, ...styleOrPhotosTab],
+    ['default-purchase']: [DETAILS, PRICING_AND_STOCK, ...styleOrPhotosTab],
     ['default-negotiation']: [DETAILS, ...locationMaybe, ...pricingMaybe, ...styleOrPhotosTab],
     ['default-inquiry']: [DETAILS, ...locationMaybe, ...pricingMaybe, ...styleOrPhotosTab],
   };
@@ -665,6 +665,7 @@ class EditListingWizard extends Component {
               <EditListingWizardTab
                 {...rest}
                 key={tab}
+                currentUser={currentUser}
                 tabId={`${id}_${tab}`}
                 tabLabel={tabTranslations.label}
                 tabSubmitButtonText={tabTranslations.submitButton}

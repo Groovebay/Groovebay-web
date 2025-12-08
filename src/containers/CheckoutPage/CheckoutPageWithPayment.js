@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Import contexts and util modules
 import { FormattedMessage, intlShape } from '../../util/reactIntl';
@@ -18,7 +18,15 @@ import {
 } from '../../transactions/transaction';
 
 // Import shared components
-import { H3, H4, NamedLink, OrderBreakdown, Page, TopbarSimplified } from '../../components';
+import {
+  H3,
+  H4,
+  NamedLink,
+  OrderBreakdown,
+  Page,
+  ProgressStep,
+  TopbarSimplified,
+} from '../../components';
 
 import {
   bookingDatesMaybe,
@@ -41,6 +49,13 @@ import MobileOrderBreakdown from './MobileOrderBreakdown';
 
 import css from './CheckoutPage.module.css';
 import CartDetailsSideCard from './CartDetailsSideCard.js';
+import ShippingDetailsForm from './ShippingDetailsForm/ShippingDetailsForm.js';
+import useUpdateShippingAddress from '../../hooks/useUpdateShippingAddress.js';
+import useGetShippingRates from '../../hooks/useGetShippingRates.js';
+import IconCarrier from '../../components/IconCarrier/IconCarrier.js';
+import SHIPPING_CARRIERS from '../../util/constants.js';
+import ShippingMethodForm from './ShippingMethodForm/ShippingMethodForm.js';
+import Spinner from '../../components/IconSpinner/IconSpinner.js';
 
 // Stripe PaymentIntent statuses, where user actions are already completed
 // https://stripe.com/docs/payments/payment-intents/status
@@ -114,7 +129,9 @@ const getOrderParams = (pageData, shippingDetails, optionalPaymentParams, config
   const seats = pageData.orderData?.seats;
   const seatsMaybe = seats ? { seats } : {};
   const deliveryMethod = pageData.orderData?.deliveryMethod;
+  const shippingRateId = pageData?.shippingRateId;
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
+  const shippingRateIdMaybe = shippingRateId ? { shippingRateId } : {};
   const { listingType, unitType, priceVariants } = pageData?.listing?.attributes?.publicData || {};
 
   // price variant data for fixed duration bookings
@@ -131,6 +148,7 @@ const getOrderParams = (pageData, shippingDetails, optionalPaymentParams, config
       ...providerCartMaybe,
       ...fromCartMaybe,
       paymentMethodType: pageData.paymentMethodType,
+      ...shippingRateIdMaybe,
     },
   };
 
@@ -154,6 +172,7 @@ const getOrderParams = (pageData, shippingDetails, optionalPaymentParams, config
     ...optionalPaymentParams,
     ...providerCartMaybe,
     ...fromCartMaybe,
+    ...shippingRateIdMaybe,
   };
   return orderParams;
 };
@@ -237,7 +256,15 @@ export const loadInitialDataForStripePayments = ({
   fetchSpeculatedTransactionIfNeeded(orderParams, pageData, fetchSpeculatedTransaction);
 };
 
-const handleSubmit = (values, process, props, stripe, submitting, setSubmitting) => {
+const handleSubmit = (
+  values,
+  process,
+  props,
+  stripe,
+  submitting,
+  setSubmitting,
+  selectedShippingRate
+) => {
   if (submitting) {
     return;
   }
@@ -263,6 +290,7 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     sessionStorageKey,
     onConfirmStock,
     onClearAuthorCart,
+    onCreateShipment,
   } = props;
   const {
     card,
@@ -313,9 +341,10 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     paymentMethodType,
     onConfirmStock,
     onClearAuthorCart,
+    onCreateShipment,
   };
 
-  const shippingDetails = getShippingDetailsMaybe(formValues);
+  const shippingDetails = getShippingDetailsMaybe(formValues, currentUser);
   // Note: optionalPaymentParams contains Stripe paymentMethod,
   // but that can also be passed on Step 2
   // stripe.confirmCardPayment(stripe, { payment_method: stripePaymentMethodId })
@@ -331,13 +360,13 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
   // These are the order parameters for the first payment-related transition
   // which is either initiate-transition or initiate-transition-after-enquiry
   const orderParams = getOrderParams(
-    { ...pageData, paymentMethodType },
+    { ...pageData, paymentMethodType, shippingRateId: selectedShippingRate?.id },
     shippingDetails,
     optionalPaymentParams,
     config
   );
-
   // There are multiple XHR calls that needs to be made against Stripe API and Sharetribe Marketplace API on checkout with payments
+
   processCheckoutWithPayment(orderParams, requestPaymentParams)
     .then(response => {
       const { orderId, messageSuccess, paymentMethodSaved } = response;
@@ -428,6 +457,8 @@ export const CheckoutPageWithPayment = props => {
   const [submitting, setSubmitting] = useState(false);
   // Initialized stripe library is saved to state - if it's needed at some point here too.
   const [stripe, setStripe] = useState(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedShippingRate, setSelectedShippingRate] = useState(null);
 
   const {
     scrollingDisabled,
@@ -449,7 +480,21 @@ export const CheckoutPageWithPayment = props => {
     title,
     config,
     listings,
+    reSpeculateInProgress,
+    fetchSpeculatedTransaction,
   } = props;
+
+  const orderParams = {
+    ...getOrderParams(pageData, {}, {}, config),
+    shippingRateId: selectedShippingRate?.id,
+  };
+
+  const selectedShippingRateId = selectedShippingRate?.id;
+  useEffect(() => {
+    if (selectedShippingRateId) {
+      fetchSpeculatedTransactionIfNeeded(orderParams, pageData, fetchSpeculatedTransaction);
+    }
+  }, [JSON.stringify(orderParams), JSON.stringify(pageData), selectedShippingRateId]);
 
   // Since the listing data is already given from the ListingPage
   // and stored to handle refreshes, it might not have the possible
@@ -491,6 +536,15 @@ export const CheckoutPageWithPayment = props => {
         marketplaceName={config.marketplaceName}
       />
     ) : null;
+
+  const breakdownWithLoading = reSpeculateInProgress ? (
+    <div className={css.loadingBreakdown}>
+      <Spinner />
+      <FormattedMessage id="CheckoutPage.loadingBreakdown" />
+    </div>
+  ) : (
+    breakdown
+  );
 
   const totalPrice =
     tx?.attributes?.lineItems?.length > 0 ? getFormattedTotalPrice(tx, intl) : null;
@@ -591,6 +645,31 @@ export const CheckoutPageWithPayment = props => {
     currency,
     'stripe'
   );
+
+  const {
+    onUpdateShippingAddress,
+    updateShippingAddressInProgress,
+    updateShippingAddressError,
+  } = useUpdateShippingAddress();
+  const initialValues = currentUser?.attributes?.profile?.protectedData?.shippingAddress;
+
+  const hasEnoughShippingAddressFields =
+    initialValues?.street &&
+    initialValues?.city &&
+    initialValues?.region &&
+    initialValues?.postal_code &&
+    initialValues?.cc &&
+    initialValues?.phone &&
+    initialValues?.number;
+
+  const { getShippingRatesInProgress, getShippingRatesError, shippingRates } = useGetShippingRates({
+    tx,
+    currentUser,
+    listing,
+  });
+  const onSelectShippingRate = rate => {
+    setSelectedShippingRate(rate);
+  };
   // Render an error message if the listing is using a non Stripe supported currency
   // and is using a transaction process with Stripe actions (default-booking or default-purchase)
   if (!isStripeCompatibleCurrency) {
@@ -618,7 +697,7 @@ export const CheckoutPageWithPayment = props => {
         speculateTransactionErrorMessage={errorMessages.speculateTransactionErrorMessage}
         isInquiryProcess={false}
         processName={processName}
-        breakdown={breakdown}
+        breakdown={breakdownWithLoading}
         intl={intl}
         {...props}
       />
@@ -679,47 +758,103 @@ export const CheckoutPageWithPayment = props => {
             {errorMessages.speculateErrorMessage}
             {errorMessages.retrievePaymentIntentErrorMessage}
             {errorMessages.paymentExpiredMessage}
-
-            {showPaymentForm ? (
-              <StripePaymentForm
-                className={css.paymentForm}
-                onSubmit={values =>
-                  handleSubmit(values, process, props, stripe, submitting, setSubmitting)
-                }
-                inProgress={submitting}
-                formId="CheckoutPagePaymentForm"
-                providerDisplayName={providerDisplayName}
-                showInitialMessageInput={showInitialMessageInput}
-                initialValues={initialValuesForStripePayment}
-                initiateOrderError={initiateOrderError}
-                confirmCardPaymentError={confirmCardPaymentError}
-                confirmPaymentError={confirmPaymentError}
-                hasHandledCardPayment={hasPaymentIntentUserActionsDone}
-                hasHandledIdealPayment={hasPaymentIntentUserActionsDone}
-                loadingData={!stripeCustomerFetched}
-                defaultPaymentMethod={
-                  hasDefaultPaymentMethod(stripeCustomerFetched, currentUser)
-                    ? currentUser.stripeCustomer.defaultPaymentMethod
-                    : null
-                }
-                paymentIntent={paymentIntent}
-                onStripeInitialized={stripe => {
-                  setStripe(stripe);
-                  return onStripeInitialized(stripe, process, props);
-                }}
-                askShippingDetails={askShippingDetails}
-                showPickUpLocation={showPickUpLocation}
-                showLocation={showLocation}
-                listingLocation={listingLocation}
-                totalPrice={totalPrice}
-                locale={config.localization.locale}
-                stripePublishableKey={config.stripe.publishableKey}
-                marketplaceName={config.marketplaceName}
-                isBooking={isBookingProcessAlias(transactionProcessAlias)}
-                isFuzzyLocation={config.maps.fuzzy.enabled}
-                disablePaymentMethodTypeChange={!!alreadyRequestPayment}
-              />
-            ) : null}
+            {showPaymentForm && (
+              <ProgressStep
+                steps={[
+                  {
+                    title: intl.formatMessage({ id: 'ShippingAddressForm.title' }),
+                    disabled: !!alreadyRequestPayment,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'ShippingMethodForm.title' }),
+                    disabled: !!alreadyRequestPayment,
+                  },
+                  {
+                    title: intl.formatMessage({ id: 'PaymentForm.title' }),
+                    disabled: false,
+                  },
+                ]}
+                currentStep={currentStep}
+                onStepChange={setCurrentStep}
+              >
+                <div className={css.formContainer}>
+                  {currentStep === 1 && !alreadyRequestPayment && (
+                    <ShippingDetailsForm
+                      currentUser={currentUser}
+                      onSubmit={onUpdateShippingAddress}
+                      updateShippingAddressInProgress={updateShippingAddressInProgress}
+                      updateShippingAddressError={updateShippingAddressError}
+                      onNextStep={() => {
+                        setCurrentStep(currentStep + 1);
+                      }}
+                      disabledNextStep={!hasEnoughShippingAddressFields}
+                    />
+                  )}
+                  {currentStep === 2 && !alreadyRequestPayment && (
+                    <ShippingMethodForm
+                      shippingRates={shippingRates}
+                      getShippingRatesInProgress={getShippingRatesInProgress}
+                      getShippingRatesError={getShippingRatesError}
+                      onSelectShippingRate={onSelectShippingRate}
+                      selectedShippingRate={selectedShippingRate}
+                      onNextStep={() => {
+                        setCurrentStep(currentStep + 1);
+                      }}
+                      disabledNextStep={!selectedShippingRate}
+                    />
+                  )}
+                  {(currentStep === 3 || alreadyRequestPayment) && (
+                    <StripePaymentForm
+                      className={css.paymentForm}
+                      onSubmit={values =>
+                        handleSubmit(
+                          values,
+                          process,
+                          props,
+                          stripe,
+                          submitting,
+                          setSubmitting,
+                          selectedShippingRate
+                        )
+                      }
+                      inProgress={submitting}
+                      formId="CheckoutPagePaymentForm"
+                      providerDisplayName={providerDisplayName}
+                      showInitialMessageInput={showInitialMessageInput}
+                      initialValues={initialValuesForStripePayment}
+                      initiateOrderError={initiateOrderError}
+                      confirmCardPaymentError={confirmCardPaymentError}
+                      confirmPaymentError={confirmPaymentError}
+                      hasHandledCardPayment={hasPaymentIntentUserActionsDone}
+                      hasHandledIdealPayment={hasPaymentIntentUserActionsDone}
+                      currentUser={currentUser}
+                      loadingData={!stripeCustomerFetched}
+                      defaultPaymentMethod={
+                        hasDefaultPaymentMethod(stripeCustomerFetched, currentUser)
+                          ? currentUser.stripeCustomer.defaultPaymentMethod
+                          : null
+                      }
+                      paymentIntent={paymentIntent}
+                      onStripeInitialized={stripe => {
+                        setStripe(stripe);
+                        return onStripeInitialized(stripe, process, props);
+                      }}
+                      askShippingDetails={askShippingDetails}
+                      showPickUpLocation={showPickUpLocation}
+                      showLocation={showLocation}
+                      listingLocation={listingLocation}
+                      totalPrice={totalPrice}
+                      locale={config.localization.locale}
+                      stripePublishableKey={config.stripe.publishableKey}
+                      marketplaceName={config.marketplaceName}
+                      isBooking={isBookingProcessAlias(transactionProcessAlias)}
+                      isFuzzyLocation={config.maps.fuzzy.enabled}
+                      disablePaymentMethodTypeChange={!!alreadyRequestPayment}
+                    />
+                  )}
+                </div>
+              </ProgressStep>
+            )}
           </section>
         </main>
 

@@ -2,6 +2,7 @@ import toPairs from 'lodash/toPairs';
 import { types as sdkTypes } from './sdkLoader';
 import { diffInTime } from './dates';
 import { extractYouTubeID } from './string';
+import { isValidPhoneNumber } from 'react-phone-number-input';
 
 const { LatLng, Money } = sdkTypes;
 
@@ -271,3 +272,8 @@ export const validSGID = message => value => {
 
 export const composeValidators = (...validators) => value =>
   validators.reduce((error, validator) => error || validator(value), VALID);
+
+export const validPhoneNumber = message => value => {
+  console.log(value);
+  return isValidPhoneNumber(value) ? VALID : message;
+};

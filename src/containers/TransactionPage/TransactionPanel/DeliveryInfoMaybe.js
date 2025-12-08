@@ -11,7 +11,7 @@ import css from './TransactionPanel.module.css';
 
 // Functional component as a helper to build ActivityFeed section
 const DeliveryInfoMaybe = props => {
-  const { className, rootClassName, protectedData, listing, locale } = props;
+  const { className, rootClassName, protectedData, listing, locale, shipmentLabelUrl } = props;
   const classes = classNames(rootClassName || css.deliveryInfoContainer, className);
   const deliveryMethod = protectedData?.deliveryMethod;
   const isShipping = deliveryMethod === 'shipping';
@@ -53,6 +53,19 @@ const DeliveryInfoMaybe = props => {
         <Heading as="h3" rootClassName={css.sectionHeading}>
           <FormattedMessage id="TransactionPanel.shippingInfoHeading" />
         </Heading>
+
+        <Heading as="h3" rootClassName={css.sectionHeading}>
+          {shipmentLabelUrl ? (
+            <a href={shipmentLabelUrl} target="_blank" rel="noopener noreferrer">
+              <FormattedMessage id="TransactionPanel.shippingLabelLink" />
+            </a>
+          ) : (
+            <Heading as="h3" rootClassName={css.sectionHeading}>
+              <FormattedMessage id="TransactionPanel.weArePreparingYourOrder" />
+            </Heading>
+          )}
+        </Heading>
+
         <div className={css.shippingInfoContent}>
           {name}
           <br />

@@ -1,0 +1,11 @@
+.root {
+  width: 100%;
+}
+
+.inputError input {
+  border-color: var(--colorFail);
+}
+
+.inputError input:focus {
+  border-color: initial;
+}

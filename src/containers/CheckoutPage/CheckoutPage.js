@@ -42,6 +42,7 @@ import {
   sendMessage,
   initiateInquiryWithoutPayment,
   confirmStockThunk,
+  createShipmentThunk,
 } from './CheckoutPage.duck';
 
 import CheckoutPageWithPayment, {
@@ -224,6 +225,9 @@ const mapStateToProps = state => {
     initiateOrderError,
     confirmPaymentError,
     queryTransactionListingsIds,
+    reSpeculateInProgress,
+    createShipmentInProgress,
+    createShipmentError,
   } = state.CheckoutPage;
   const { currentUser } = state.user;
   const { confirmCardPaymentError, paymentIntent, retrievePaymentIntentError } = state.stripe;
@@ -249,6 +253,9 @@ const mapStateToProps = state => {
     paymentIntent,
     retrievePaymentIntentError,
     listings,
+    reSpeculateInProgress,
+    createShipmentInProgress,
+    createShipmentError,
   };
 };
 
@@ -270,6 +277,7 @@ const mapDispatchToProps = dispatch => ({
     dispatch(savePaymentMethod(stripeCustomer, stripePaymentMethodId)),
   onConfirmStock: transactionId => dispatch(confirmStockThunk(transactionId)),
   onClearAuthorCart: providerId => dispatch(clearAuthorCartThunk(providerId)),
+  onCreateShipment: body => dispatch(createShipmentThunk(body)),
 });
 
 const CheckoutPage = compose(

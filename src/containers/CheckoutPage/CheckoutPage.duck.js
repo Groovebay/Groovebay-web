@@ -1,6 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import pick from 'lodash/pick';
-import { confirmStock, initiatePrivileged, transitionPrivileged } from '../../util/api';
+import {
+  confirmStock,
+  createShipment,
+  getShippingRates,
+  initiatePrivileged,
+  transitionPrivileged,
+} from '../../util/api';
 import { denormalisedResponseEntities } from '../../util/data';
 import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
@@ -19,17 +25,25 @@ const initiateOrderPayloadCreator = (
   // If we already have a transaction ID, we should transition, not initiate.
   const isTransition = !!transactionId;
 
-  const { deliveryMethod, quantity, bookingDates, providerCart, ...otherOrderParams } = orderParams;
+  const {
+    deliveryMethod,
+    quantity,
+    bookingDates,
+    providerCart,
+    shippingRateId,
+    ...otherOrderParams
+  } = orderParams;
 
   const quantityMaybe = quantity ? { stockReservationQuantity: quantity } : {};
   const bookingParamsMaybe = bookingDates || {};
   const providerCartMaybe = providerCart ? { providerCart } : {};
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
-
+  const shippingRateIdMaybe = shippingRateId ? { shippingRateId } : {};
   // Parameters only for client app's server
   const orderData = {
     ...deliveryMethodMaybe,
     ...providerCartMaybe,
+    ...shippingRateIdMaybe,
   };
 
   // Parameters for Marketplace API
@@ -51,7 +65,7 @@ const initiateOrderPayloadCreator = (
         params: transitionParams,
       };
   const queryParams = {
-    include: ['booking', 'provider'],
+    include: ['booking', 'provider', 'customer'],
     expand: true,
   };
 
@@ -300,6 +314,7 @@ const speculateTransactionPayloadCreator = (
     bookingDates,
     providerCart,
     fromCart,
+    shippingRateId,
     ...otherOrderParams
   } = orderParams;
   const quantityMaybe = quantity ? { stockReservationQuantity: quantity } : {};
@@ -308,12 +323,14 @@ const speculateTransactionPayloadCreator = (
   const deliveryMethodMaybe = deliveryMethod ? { deliveryMethod } : {};
   const priceVariantNameMaybe = priceVariantName ? { priceVariantName } : {};
   const fromCartMaybe = fromCart ? { fromCart } : {};
+  const shippingRateIdMaybe = shippingRateId ? { shippingRateId } : {};
   // Parameters only for client app's server
   const orderData = {
     ...deliveryMethodMaybe,
     ...priceVariantNameMaybe,
     ...providerCartMaybe,
     ...fromCartMaybe,
+    ...shippingRateIdMaybe,
   };
 
   // Parameters for Marketplace API
@@ -337,7 +354,7 @@ const speculateTransactionPayloadCreator = (
       };
 
   const queryParams = {
-    include: ['booking', 'provider'],
+    include: ['booking', 'provider', 'customer'],
     expand: true,
   };
 
@@ -361,7 +378,9 @@ const speculateTransactionPayloadCreator = (
     return rejectWithValue(storableError(e));
   };
 
-  dispatch(queryTransactionListingsThunk(providerCart));
+  if (!shippingRateId) {
+    dispatch(queryTransactionListingsThunk(providerCart));
+  }
 
   if (isTransition && isPrivilegedTransition) {
     // transition privileged
@@ -467,6 +486,28 @@ export const confirmStockThunk = createAsyncThunk(
   }
 );
 
+export const getShippingRatesThunk = createAsyncThunk(
+  'CheckoutPage/getShippingRates',
+  async body => {
+    const response = await getShippingRates(body);
+    return response.data;
+  },
+  {
+    serializeError: storableError,
+  }
+);
+
+export const createShipmentThunk = createAsyncThunk(
+  'CheckoutPage/createShipment',
+  async body => {
+    const response = await createShipment(body);
+    return response.data;
+  },
+  {
+    serializeError: storableError,
+  }
+);
+
 // ================ Slice ================ //
 
 const initialState = {
@@ -486,6 +527,14 @@ const initialState = {
   queryTransactionListingsInProgress: false,
   queryTransactionListingsError: null,
   queryTransactionListingsIds: [],
+
+  getShippingRatesInProgress: false,
+  getShippingRatesError: null,
+  shippingRates: [],
+  reSpeculateInProgress: false,
+
+  createShipmentInProgress: false,
+  createShipmentError: null,
 };
 
 const checkoutPageSlice = createSlice({
@@ -521,8 +570,13 @@ const checkoutPageSlice = createSlice({
         state.confirmPaymentError = action.payload;
       })
       // Speculate Transaction cases
-      .addCase(speculateTransactionThunk.pending, state => {
-        state.speculateTransactionInProgress = true;
+      .addCase(speculateTransactionThunk.pending, (state, action) => {
+        const isRefetching = !!action.meta.arg.orderParams.shippingRateId;
+        if (isRefetching) {
+          state.reSpeculateInProgress = true;
+        } else {
+          state.speculateTransactionInProgress = true;
+        }
         state.speculateTransactionError = null;
         state.speculatedTransaction = null;
       })
@@ -535,11 +589,13 @@ const checkoutPageSlice = createSlice({
         state.speculatedTransaction = action.payload;
         state.isClockInSync =
           Math.abs(lastTransitionedAt?.getTime() - localTime.getTime()) < minute;
+        state.reSpeculateInProgress = false;
       })
       .addCase(speculateTransactionThunk.rejected, (state, action) => {
         console.error(action.payload); // eslint-disable-line no-console
         state.speculateTransactionInProgress = false;
         state.speculateTransactionError = action.payload;
+        state.reSpeculateInProgress = false;
       })
       // Stripe Customer cases
       .addCase(stripeCustomerThunk.pending, state => {
@@ -577,6 +633,32 @@ const checkoutPageSlice = createSlice({
       .addCase(queryTransactionListingsThunk.rejected, (state, action) => {
         state.queryTransactionListingsInProgress = false;
         state.queryTransactionListingsError = action.payload;
+      })
+      // Get Shipping Rates cases
+      .addCase(getShippingRatesThunk.pending, state => {
+        state.getShippingRatesInProgress = true;
+        state.getShippingRatesError = null;
+        state.shippingRates = [];
+      })
+      .addCase(getShippingRatesThunk.fulfilled, (state, action) => {
+        state.getShippingRatesInProgress = false;
+        state.shippingRates = action.payload;
+      })
+      .addCase(getShippingRatesThunk.rejected, (state, action) => {
+        state.getShippingRatesInProgress = false;
+        state.getShippingRatesError = action.payload;
+      })
+      // Create Shipment cases
+      .addCase(createShipmentThunk.pending, state => {
+        state.createShipmentInProgress = true;
+        state.createShipmentError = null;
+      })
+      .addCase(createShipmentThunk.fulfilled, (state, action) => {
+        state.createShipmentInProgress = false;
+      })
+      .addCase(createShipmentThunk.rejected, (state, action) => {
+        state.createShipmentInProgress = false;
+        state.createShipmentError = action.payload;
       });
   },
 });

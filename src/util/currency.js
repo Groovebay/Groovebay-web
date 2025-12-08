@@ -285,3 +285,8 @@ export const formatCurrencyMajorUnit = (intl, currency, valueWithoutSubunits) =>
 
   return intl.formatNumber(valueAsNumber, numberFormatOptions);
 };
+
+export const formatMoneyFromNumber = (intl, value) => {
+  const money = new Money(value.amount * 100, value.currency);
+  return formatMoney(intl, money);
+};

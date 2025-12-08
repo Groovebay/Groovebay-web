@@ -1,0 +1,62 @@
+const { ShippingServices, TransactionServices } = require('../../services');
+const { getAddress } = require('../../api-util/common');
+const { serialize } = require('../../api-util/sdk');
+const createShipment = async (req, res) => {
+  const { transactionId, sync = true } = req.body;
+  const transaction = await TransactionServices.get(transactionId, {
+    expand: true,
+    include: ['customer', 'provider'],
+  });
+  const customer = transaction.customer;
+  const provider = transaction.provider;
+  const customerAddress = getAddress(customer);
+  const providerAddress = getAddress(provider);
+  const shippingRate = transaction.attributes.protectedData.shippingRate;
+  const shipmentData = {
+    data: {
+      shipments: [
+        {
+          reference_identifier: `SHARETRIBE-TRANSACTION-${transactionId}`,
+          sender: {
+            cc: providerAddress.cc,
+            region: providerAddress.region,
+            city: providerAddress.city,
+            street: providerAddress.street,
+            number: providerAddress.number,
+            postal_code: providerAddress.postal_code,
+            person: provider.attributes.profile.displayName,
+            email: provider.attributes.email,
+          },
+          recipient: {
+            cc: customerAddress.cc,
+            region: customerAddress.region,
+            city: customerAddress.city,
+            street: customerAddress.street,
+            number: customerAddress.number,
+            postal_code: customerAddress.postal_code,
+            person: customer.attributes.profile.displayName,
+            email: customer.attributes.email,
+          },
+          options: {
+            package_type: 1,
+            delivery_type: 2,
+          },
+          carrier: shippingRate.carrier.id,
+        },
+      ],
+    },
+  };
+  console.log({ shipmentData });
+  const response = await ShippingServices.shipments.create(shipmentData);
+  if (sync) {
+    const shipmentId = response?.data?.ids?.[0]?.id;
+    await TransactionServices.updateMetadata(transactionId, {
+      shipmentId,
+    });
+  }
+  res.status(200).json({
+    shipmentData,
+  });
+};
+
+module.exports = createShipment;

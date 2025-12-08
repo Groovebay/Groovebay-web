@@ -40,10 +40,12 @@ const ListingCard = ({ listing, intl, quantity }) => {
               <H4 as="h5">{title}</H4>
             </NamedLink>
           </div>
-          <div className={css.listingDetailsTextPrice}>
-            <span className={css.listingDetailsTextDescription}>{formatMoney(intl, price)}</span>
-            <span className={css.listingDetailsTextQuantity}>x {quantity}</span>
-          </div>
+          {quantity > 1 && (
+            <div className={css.listingDetailsTextPrice}>
+              <span className={css.listingDetailsTextDescription}>{formatMoney(intl, price)}</span>
+              <span className={css.listingDetailsTextQuantity}>x {quantity}</span>
+            </div>
+          )}
         </div>
       </div>
       <div className={css.priceContainer}>

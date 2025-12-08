@@ -24,6 +24,7 @@ import {
   setInitialValues as TransactionPageInitialValues,
 } from './TransactionPage/TransactionPage.duck';
 import { loadData as CartPageLoader } from './CartPage/CartPage.duck';
+import { loadData as ShippingAddressPageLoader } from '../components/ShippingAddressForm/ShippingAddressForm.duck';
 
 const getPageDataLoadingAPI = () => {
   return {
@@ -87,6 +88,9 @@ const getPageDataLoadingAPI = () => {
     },
     CartPage: {
       loadData: CartPageLoader,
+    },
+    ShippingAddressPage: {
+      loadData: ShippingAddressPageLoader,
     },
   };
 };

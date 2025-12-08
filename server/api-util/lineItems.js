@@ -214,7 +214,8 @@ const getProviderCartLineItems = (
   listings,
   providerCart,
   providerCommission,
-  customerCommission
+  customerCommission,
+  shippingRate
 ) => {
   const currency = listings?.[0]?.attributes?.price?.currency;
 
@@ -232,27 +233,14 @@ const getProviderCartLineItems = (
     return lineItem;
   });
 
-  const listingHasShipping = listings.find(
-    listing => typeof listing.attributes.publicData.shippingPriceInSubunitsOneItem === 'number'
-  );
   const shippingLineItems = [];
-  const totalQuantity = Object.values(providerCart).reduce((acc, curr) => acc + curr.quantity, 0);
-  if (listingHasShipping) {
-    const {
-      shippingPriceInSubunitsOneItem,
-      shippingPriceInSubunitsAdditionalItems,
-    } = listingHasShipping.attributes.publicData;
-    const shippingFee = calculateShippingFee(
-      shippingPriceInSubunitsOneItem,
-      shippingPriceInSubunitsAdditionalItems,
-      currency,
-      totalQuantity
-    );
+  if (shippingRate) {
+    const shippingFee = new Money(shippingRate.price, shippingRate.currency);
     shippingLineItems.push({
       code: 'line-item/shipping-fee',
       unitPrice: shippingFee,
       quantity: 1,
-      includeFor: ['customer', 'provider'],
+      includeFor: ['customer'],
     });
   }
   return [
@@ -293,13 +281,20 @@ const getProviderCartLineItems = (
  * @param {Object} customerCommission
  * @returns {Array} lineItems
  */
-exports.transactionLineItems = (listings, orderData, providerCommission, customerCommission) => {
+exports.transactionLineItems = (
+  listings,
+  orderData,
+  providerCommission,
+  customerCommission,
+  shippingRate
+) => {
   if (orderData.providerCart) {
     return getProviderCartLineItems(
       listings,
       orderData.providerCart,
       providerCommission,
-      customerCommission
+      customerCommission,
+      shippingRate
     );
   }
   return getDefaultLineItems(listings?.[0], orderData, providerCommission, customerCommission);

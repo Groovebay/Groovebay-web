@@ -70,6 +70,7 @@ import {
 } from './TransactionPage.duck';
 import css from './TransactionPage.module.css';
 import { getCurrentUserTypeRoles, hasPermissionToViewData } from '../../util/userHelpers.js';
+import useGetShippingLabel from '../../hooks/useGetShippingLabel.js';
 
 // Submit dispute and close the review modal
 const onDisputeOrder = (
@@ -639,11 +640,13 @@ export const TransactionPageComponent = props => {
   const isNegotiationProcess = processName === NEGOTIATION_PROCESS_NAME;
   const isRegularNegotiation =
     isNegotiationProcess && transaction?.attributes?.protectedData?.unitType === OFFER;
+  const shipmentLabelUrl = useGetShippingLabel({ txId: transaction?.id, skipPolling: true });
 
   // TransactionPanel is presentational component
   // that currently handles showing everything inside layout's main view area.
   const panel = isDataAvailable ? (
     <TransactionPanel
+      shipmentLabelUrl={shipmentLabelUrl}
       className={detailsClassName}
       currentUser={currentUser}
       transactionId={transaction?.id}

@@ -5,6 +5,7 @@ const { getSdk, getTrustedSdk, handleError, serialize } = require('../api-util/s
 const { fetchListingsAndCommission } = require('../api-util/helpers');
 const { createStockReservationTransactions } = require('../api-util/transactionHelpers');
 const { denormalisedResponseEntities } = require('../api-util/format');
+const { ShippingServices } = require('../services');
 
 const { Money } = sharetribeSdk.types;
 
@@ -61,12 +62,18 @@ module.exports = async (req, res) => {
     const { providerCommission, customerCommission } =
       commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
+    const shippingRate = orderData.shippingRateId
+      ? await ShippingServices.rates.get(orderData.shippingRateId)
+      : null;
+
     lineItems = transactionLineItems(
       listings,
       getFullOrderData(orderData, bodyParams, currency),
       providerCommission,
-      customerCommission
+      customerCommission,
+      shippingRate
     );
+
     metadataMaybe = getMetadata(orderData, transitionName);
 
     const trustedSdk = await getTrustedSdk(req);
@@ -82,6 +89,7 @@ module.exports = async (req, res) => {
         protectedData: {
           ...params.protectedData,
           formattedLineItems: formatLineItems(lineItems, listings),
+          shippingRate,
         },
       },
     };
