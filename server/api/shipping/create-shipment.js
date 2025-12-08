@@ -46,7 +46,7 @@ const createShipment = async (req, res) => {
       ],
     },
   };
-  console.log({ shipmentData });
+
   const response = await ShippingServices.shipments.create(shipmentData);
   if (sync) {
     const shipmentId = response?.data?.ids?.[0]?.id;
