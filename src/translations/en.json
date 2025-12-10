@@ -1422,7 +1422,7 @@
   "ShippingAddressPage.heading": "Shipping address",
   "ShippingAddressForm.title": "Shipping address",
   "ShippingAddressForm.heading": "Shipping address",
-  "ShippingAddressForm.formError": "There was an error with your shipping address. Please try again.",
+  "ShippingAddressForm.formError": "Please update your shipping address to continue.",
   "ShippingAddressForm.nameLabel": "Name",
   "ShippingAddressForm.namePlaceholder": "Enter your name",
   "ShippingAddressForm.nameRequired": "Name is required",
