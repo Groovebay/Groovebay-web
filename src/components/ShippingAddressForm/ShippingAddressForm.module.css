@@ -1,0 +1,56 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.formRow {
+  /* This container uses flexbox layout */
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+
+  @media (--viewportSmall) {
+    flex-wrap: no-wrap;
+  }
+}
+
+.field {
+  width: 100%;
+  margin-top: 24px;
+
+  @media (--viewportSmall) {
+    width: calc(50% - 12px);
+  }
+}
+
+.fullField {
+  width: 100%;
+}
+
+.validateButton {
+  margin-top: 24px;
+  margin-bottom: 24px;
+
+  @media (--viewportLarge) {
+    display: inline-block;
+  }
+}
+
+.error {
+  color: var(--colorFail);
+}
+
+.success {
+  color: var(--colorSuccess);
+}
+
+.countryField select:disabled {
+  opacity: 1;
+  color: var(--colorGrey900);
+}

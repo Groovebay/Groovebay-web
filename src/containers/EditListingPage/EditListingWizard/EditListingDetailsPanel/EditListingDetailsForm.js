@@ -331,6 +331,7 @@ const EditListingDetailsForm = props => (
         listingFieldsConfig = [],
         listingCurrency,
         values,
+        onViewShippingAddress,
       } = formRenderProps;
 
       const intl = useIntl();
@@ -457,6 +458,16 @@ const EditListingDetailsForm = props => (
                 values={{ marketplaceName, marketplaceCurrency }}
               />
             </p>
+          )}
+
+          {showListingFields && (
+            <Button
+              className={css.viewShippingAddressButton}
+              type="button"
+              onClick={onViewShippingAddress}
+            >
+              <FormattedMessage id="EditListingDetailsForm.viewShippingAddress" />
+            </Button>
           )}
 
           <Button

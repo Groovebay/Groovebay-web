@@ -11,7 +11,7 @@ import {
   stringifyDateToISO8601,
 } from '../../util/dates';
 import { isTransactionsTransitionInvalidTransition, storableError } from '../../util/errors';
-import { transactionLineItems, transitionPrivileged } from '../../util/api';
+import { getShipmentLabel, transactionLineItems, transitionPrivileged } from '../../util/api';
 import * as log from '../../util/log';
 import {
   updatedEntities,
@@ -279,6 +279,14 @@ const fetchTransactionPayloadCreator = (
         // Fetch time slots for transactions that are in inquired state
         const canFetchTimeslots =
           txRole === 'customer' && isBookingProcess(processName) && isInquiry;
+
+        const shipmentLabelUrl = transaction?.attributes?.metadata?.shipmentLabelUrl;
+        const linkTraceTraceUrl = transaction?.attributes?.metadata?.linkTraceTraceUrl;
+        if (!shipmentLabelUrl) {
+          dispatch(getShipmentLabelThunk(transaction.id.uuid));
+        } else {
+          dispatch(setShipmentLabelUrl({ shipmentLabelUrl, linkTraceTraceUrl }));
+        }
 
         if (canFetchTimeslots) {
           fetchMonthlyTimeSlots(dispatch, listing);
@@ -587,6 +595,16 @@ export const fetchTransactionLineItems = ({ orderData, listingId, isOwnListing }
   return dispatch(fetchLineItemsThunk({ orderData, listingId, isOwnListing }));
 };
 
+export const getShipmentLabelThunk = createAsyncThunk(
+  'TransactionPage/getShipmentLabel',
+  transactionId => {
+    return getShipmentLabel({ transactionId });
+  },
+  {
+    serializeError: storableError,
+  }
+);
+
 // ================ Slice ================ //
 
 const initialState = {
@@ -633,6 +651,11 @@ const initialState = {
 
   transactionListingIds: [],
   queryTransactionListingsInProgress: false,
+
+  shipmentLabelUrl: null,
+  getShipmentLabelInProgress: false,
+  getShipmentLabelError: null,
+  linkTraceTraceUrl: null,
 };
 
 // Merge entity arrays using ids, so that conflicting items in newer array (b) overwrite old values (a).
@@ -650,6 +673,10 @@ const transactionPageSlice = createSlice({
   reducers: {
     setInitialValues: (state, action) => {
       return { ...initialState, ...action.payload };
+    },
+    setShipmentLabelUrl: (state, action) => {
+      state.shipmentLabelUrl = action.payload.shipmentLabelUrl;
+      state.linkTraceTraceUrl = action.payload.linkTraceTraceUrl;
     },
   },
   extraReducers: builder => {
@@ -812,11 +839,25 @@ const transactionPageSlice = createSlice({
             fetchTimeSlotsError: error,
           };
         }
+      })
+      // getShipmentLabel cases
+      .addCase(getShipmentLabelThunk.pending, state => {
+        state.getShipmentLabelInProgress = true;
+        state.getShipmentLabelError = null;
+      })
+      .addCase(getShipmentLabelThunk.fulfilled, (state, action) => {
+        state.getShipmentLabelInProgress = false;
+        state.shipmentLabelUrl = action.payload.data.labelUrl;
+        state.linkTraceTraceUrl = action.payload.data.linkTraceTraceUrl;
+      })
+      .addCase(getShipmentLabelThunk.rejected, (state, action) => {
+        state.getShipmentLabelInProgress = false;
+        state.getShipmentLabelError = action.payload;
       });
   },
 });
 
-export const { setInitialValues } = transactionPageSlice.actions;
+export const { setInitialValues, setShipmentLabelUrl } = transactionPageSlice.actions;
 
 export default transactionPageSlice.reducer;
 

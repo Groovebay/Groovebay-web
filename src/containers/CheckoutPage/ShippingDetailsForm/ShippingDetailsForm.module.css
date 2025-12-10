@@ -1,0 +1,9 @@
+.root {
+  width: 100%;
+}
+.useSavedAddressButton {
+  width: 150px;
+  min-height: 40px;
+  font-size: 12px;
+  margin-bottom: 30px;
+}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import classNames from 'classnames';
 
 // Import util modules
@@ -17,7 +17,7 @@ import {
 import { isBookingProcessAlias } from '../../../../transactions/transaction';
 
 // Import shared components
-import { H3, ListingLink } from '../../../../components';
+import { H3, ListingLink, Modal, ShippingAddressForm } from '../../../../components';
 
 // Import modules from this directory
 import ErrorMessage from './ErrorMessage';
@@ -283,7 +283,11 @@ const EditListingDetailsPanel = props => {
     config,
     updatePageTitle: UpdatePageTitle,
     intl,
+    currentUser,
   } = props;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showShippingAddressFormError, setShowShippingAddressFormError] = useState(false);
+  const hasShippingAddress = !!currentUser?.attributes?.profile?.protectedData?.shippingAddress;
 
   const classes = classNames(rootClassName || css.root, className);
   const { publicData, state } = listing?.attributes || {};
@@ -391,6 +395,13 @@ const EditListingDetailsPanel = props => {
               ...setNoAvailabilityForUnbookableListings(transactionProcessAlias),
             };
 
+            if (!hasShippingAddress) {
+              setShowShippingAddressFormError(true);
+              setIsModalOpen(true);
+            } else {
+              onSubmit(updateValues);
+            }
+
             onSubmit(updateValues);
           }}
           selectableListingTypes={listingTypes.map(conf => getTransactionInfo([conf], {}, true))}
@@ -410,6 +421,9 @@ const EditListingDetailsPanel = props => {
           updated={panelUpdated}
           updateInProgress={updateInProgress}
           fetchErrors={errors}
+          onViewShippingAddress={() => {
+            setIsModalOpen(true);
+          }}
           autoFocus
         />
       ) : (
@@ -419,6 +433,23 @@ const EditListingDetailsPanel = props => {
           invalidExistingListingType={!hasValidExistingListingType}
         />
       )}
+      <Modal
+        id="ShippingAddress"
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+        }}
+        onManageDisableScrolling={props.onManageDisableScrolling}
+        usePortal
+      >
+        <ShippingAddressForm
+          showShippingAddressFormError={showShippingAddressFormError}
+          successCallback={() => {
+            setShowShippingAddressFormError(false);
+            setIsModalOpen(false);
+          }}
+        />
+      </Modal>
     </main>
   );
 };

@@ -5,7 +5,7 @@ import { intlShape } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import * as validators from '../../util/validators';
 
-import { FieldPhoneNumberInput } from '../../components';
+import { FieldPhoneNumberWithCountryInput } from '../../components';
 
 /**
  * A component that renders the phone number field.
@@ -34,18 +34,16 @@ const UserFieldPhoneNumber = props => {
   const isRequired = required === true;
   const validateMaybe = isRequired
     ? {
-        validate: validators.required(
-          intl.formatMessage({
-            id: `${formName}.phoneNumberRequired`,
-          })
+        validate: validators.composeValidators(
+          validators.required(intl.formatMessage({ id: `${formName}.phoneNumberRequired` })),
+          validators.validPhoneNumber(intl.formatMessage({ id: `${formName}.phoneNumberInvalid` }))
         ),
       }
     : {};
 
   return (
-    <FieldPhoneNumberInput
+    <FieldPhoneNumberWithCountryInput
       className={classNames(className, { [rootClassName]: !!rootClassName })}
-      type="text"
       id={formId ? `${formId}.phoneNumber` : 'phoneNumber'}
       name="phoneNumber"
       label={intl.formatMessage({

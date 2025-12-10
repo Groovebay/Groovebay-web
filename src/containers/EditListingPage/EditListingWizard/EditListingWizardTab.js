@@ -113,6 +113,7 @@ const EditListingWizardTab = props => {
     routeConfiguration,
     titleId,
     intl,
+    currentUser,
   } = props;
 
   const { type } = params;
@@ -168,6 +169,7 @@ const EditListingWizardTab = props => {
 
   const panelProps = tab => {
     return {
+      currentUser,
       className: css.panel,
       errors,
       listing,

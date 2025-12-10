@@ -18,11 +18,13 @@ const transitionPrivileged = require('./api/transition-privileged');
 const deleteAccount = require('./api/delete-account');
 const confirmStock = require('./api/confirm-stock');
 const createUserWithIdp = require('./api/auth/createUserWithIdp');
-
 const { authenticateFacebook, authenticateFacebookCallback } = require('./api/auth/facebook');
 const { authenticateGoogle, authenticateGoogleCallback } = require('./api/auth/google');
-
+const shippingRouter = require('./api/shipping');
 const stripeRouter = require('./api/stripe');
+const webhooksRouter = require('./api/webhooks');
+const { ShippingServices } = require('./services');
+
 const router = express.Router();
 
 // ================ API router middleware: ================ //
@@ -86,5 +88,12 @@ router.get('/auth/google/callback', authenticateGoogleCallback);
 router.use('/stripe', stripeRouter);
 
 router.post('/confirm-stock', confirmStock);
+
+router.use('/shipping', shippingRouter);
+
+router.use('/webhooks', webhooksRouter);
+
+// Subscribe to MyParcel webhooks
+ShippingServices.webhooks.subscribe();
 
 module.exports = router;

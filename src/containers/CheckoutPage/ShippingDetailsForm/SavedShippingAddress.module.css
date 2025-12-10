@@ -1,0 +1,39 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.addressContainer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.addressInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.addressInfo p {
+  margin: 0;
+}
+.name {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.street {
+  font-size: 14px;
+}
+
+.city {
+  font-size: 14px;
+}
+
+.changeButton {
+  width: 100px;
+  min-height: 40px;
+  font-size: 12px;
+}

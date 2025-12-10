@@ -155,3 +155,15 @@ export const deleteUserAccount = body => {
 export const confirmStock = body => {
   return post('/api/confirm-stock', body);
 };
+
+export const getShippingRates = body => {
+  return post('/api/shipping/rates', body);
+};
+
+export const createShipment = body => {
+  return post('/api/shipping/shipments', body);
+};
+
+export const getShipmentLabel = body => {
+  return post('/api/shipping/labels', body);
+};

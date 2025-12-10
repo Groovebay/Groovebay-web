@@ -577,3 +577,14 @@
   gap: 4px;
   align-items: center;
 }
+
+.loadingBreakdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  width: 100%;
+  font-size: 14px;
+  text-align: center;
+}

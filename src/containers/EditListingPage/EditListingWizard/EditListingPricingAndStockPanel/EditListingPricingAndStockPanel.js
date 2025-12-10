@@ -169,7 +169,7 @@ const EditListingPricingAndStockPanel = props => {
                 ? {
                     stockUpdate: {
                       oldTotal,
-                      newTotal: stock,
+                      newTotal: 1000000,
                     },
                   }
                 : {};

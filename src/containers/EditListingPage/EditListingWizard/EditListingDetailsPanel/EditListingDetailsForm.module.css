@@ -75,3 +75,13 @@
     margin-top: 100px;
   }
 }
+
+.viewShippingAddressButton {
+  margin-bottom: 10px;
+
+  @media (--viewportLarge) {
+    margin-bottom: 0;
+    display: inline-block;
+    width: 241px;
+  }
+}

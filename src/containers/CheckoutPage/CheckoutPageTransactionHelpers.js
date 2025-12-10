@@ -108,7 +108,7 @@ export const getFormattedTotalPrice = (transaction, intl) => {
  * recipientCity, recipientState, and recipientCountry.
  * @returns shippingDetails object containing name, phoneNumber and address
  */
-export const getShippingDetailsMaybe = formValues => {
+export const getShippingDetailsMaybe = (formValues, currentUser) => {
   const {
     saveAfterOnetimePayment: saveAfterOnetimePaymentRaw,
     recipientName,
@@ -120,6 +120,26 @@ export const getShippingDetailsMaybe = formValues => {
     recipientState,
     recipientCountry,
   } = formValues;
+  const name = currentUser?.attributes?.profile?.displayName;
+  const currentUserShippingAddress =
+    currentUser?.attributes?.profile?.protectedData?.shippingAddress;
+
+  if (currentUserShippingAddress) {
+    return {
+      shippingDetails: {
+        name: name,
+        phoneNumber: currentUserShippingAddress.phone,
+        address: {
+          city: currentUserShippingAddress.city,
+          country: currentUserShippingAddress.cc,
+          line1: currentUserShippingAddress.street,
+          line2: currentUserShippingAddress.number,
+          postalCode: currentUserShippingAddress.postal_code,
+          state: currentUserShippingAddress.region,
+        },
+      },
+    };
+  }
 
   return recipientName && recipientAddressLine1 && recipientPostal
     ? {
@@ -215,6 +235,7 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     stripePaymentMethodId,
     onConfirmStock,
     onClearAuthorCart,
+    onCreateShipment,
   } = extraPaymentParams;
   const { paymentMethodTypes = [] } = orderParams;
   const isIdeal = paymentMethodTypes.includes('ideal');
@@ -404,6 +425,15 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     }
   };
 
+  const fnCreateShipment = async order => {
+    const orderId = order?.id?.uuid;
+    await onCreateShipment({
+      transactionId: orderId,
+      sync: true,
+    });
+    return order;
+  };
+
   // Here we create promise calls in sequence
   // This is pretty much the same as:
   // fnRequestPayment({...initialParams})
@@ -416,6 +446,7 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     fnConfirmStockMaybe,
     fnConfirmCardPayment,
     fnConfirmPayment,
+    fnCreateShipment,
     fnClearAuthorCartMaybe,
     fnSendMessage,
     fnSavePaymentMethod

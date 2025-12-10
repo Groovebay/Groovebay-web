@@ -418,14 +418,25 @@ class StripePaymentForm extends Component {
   updateBillingDetailsToMatchShippingAddress(shouldFill) {
     const formApi = this.finalFormAPI;
     const values = formApi.getState()?.values || {};
+    const { currentUser } = this.props;
+    const {
+      name,
+      street,
+      city,
+      region,
+      postal_code,
+      cc,
+      phone,
+      number,
+    } = currentUser?.attributes?.profile?.protectedData?.shippingAddress;
     formApi.batch(() => {
       formApi.change('name', shouldFill ? values.recipientName : '');
-      formApi.change('addressLine1', shouldFill ? values.recipientAddressLine1 : '');
-      formApi.change('addressLine2', shouldFill ? values.recipientAddressLine2 : '');
-      formApi.change('postal', shouldFill ? values.recipientPostal : '');
-      formApi.change('city', shouldFill ? values.recipientCity : '');
-      formApi.change('state', shouldFill ? values.recipientState : '');
-      formApi.change('country', shouldFill ? values.recipientCountry : '');
+      formApi.change('addressLine1', shouldFill ? street || values.recipientAddressLine1 : '');
+      formApi.change('addressLine2', shouldFill ? number || values.recipientAddressLine2 : '');
+      formApi.change('postal', shouldFill ? postal_code || values.recipientPostal : '');
+      formApi.change('city', shouldFill ? city || values.recipientCity : '');
+      formApi.change('state', shouldFill ? region || values.recipientState : '');
+      formApi.change('country', shouldFill ? cc || values.recipientCountry : '');
     });
   }
 
@@ -742,7 +753,7 @@ class StripePaymentForm extends Component {
 
     return hasStripeKey ? (
       <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
-        <LocationOrShippingDetails
+        {/* <LocationOrShippingDetails
           askShippingDetails={askShippingDetails}
           showPickUpLocation={showPickUpLocation}
           showLocation={showLocation}
@@ -751,7 +762,7 @@ class StripePaymentForm extends Component {
           formApi={formApi}
           locale={locale}
           intl={intl}
-        />
+        /> */}
 
         <FieldSelect
           disabled={disablePaymentMethodTypeChange}

@@ -181,7 +181,10 @@ export class TransactionPanelComponent extends Component {
       config,
       hasViewingRights,
       transactionListings,
+      shipmentLabelUrl,
+      linkTraceTraceUrl,
     } = this.props;
+
     const isPurchaseProcess = isPurchaseProcessFn(stateData.processName);
 
     const hasTransitions = transitions.length > 0;
@@ -386,6 +389,8 @@ export class TransactionPanelComponent extends Component {
                   </p>
                 ) : null}
                 <DeliveryInfoMaybe
+                  shipmentLabelUrl={shipmentLabelUrl}
+                  linkTraceTraceUrl={linkTraceTraceUrl}
                   className={css.deliveryInfoSection}
                   protectedData={protectedData}
                   listing={listing}
