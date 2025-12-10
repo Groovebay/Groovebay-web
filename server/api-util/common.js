@@ -26,4 +26,16 @@ const getAddress = user => {
   return user.attributes.profile.protectedData.shippingAddress;
 };
 
-export { validateRequiredFields, getAddress };
+const SHIPPING_API_BASE_URL = 'https://api.myparcel.nl';
+
+const getFormattedShippingLabelUrl = url => {
+  if (!url) return null;
+  return url.startsWith('https://') ? url : `${SHIPPING_API_BASE_URL}${url}`;
+};
+
+module.exports = {
+  validateRequiredFields,
+  getAddress,
+  SHIPPING_API_BASE_URL,
+  getFormattedShippingLabelUrl,
+};

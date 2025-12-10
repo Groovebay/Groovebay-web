@@ -12,7 +12,7 @@ import { isFulfilled } from '@reduxjs/toolkit';
  */
 
 const useGetShippingLabel = ({ txId, skipPolling = false }) => {
-  const { shipmentLabelUrl } = useSelector(state => state.TransactionPage);
+  const { shipmentLabelUrl, linkTraceTraceUrl } = useSelector(state => state.TransactionPage);
   const dispatch = useDispatch();
   const intervalRef = useRef(null);
   const transactionUuid = txId?.uuid;
@@ -29,7 +29,6 @@ const useGetShippingLabel = ({ txId, skipPolling = false }) => {
       intervalRef.current = setInterval(async () => {
         // Check if shipping label details are now available
         const hasEnoughData = !!shipmentLabelUrl;
-        console.log({ hasEnoughData });
         if (hasEnoughData) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
@@ -57,7 +56,7 @@ const useGetShippingLabel = ({ txId, skipPolling = false }) => {
   }, [transactionUuid, shipmentLabelUrl, dispatch]);
 
   // Return the shipping label URL for convenience
-  return shipmentLabelUrl;
+  return { shipmentLabelUrl, linkTraceTraceUrl };
 };
 
 export default useGetShippingLabel;

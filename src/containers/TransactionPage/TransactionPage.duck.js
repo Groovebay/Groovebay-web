@@ -281,8 +281,11 @@ const fetchTransactionPayloadCreator = (
           txRole === 'customer' && isBookingProcess(processName) && isInquiry;
 
         const shipmentLabelUrl = transaction?.attributes?.metadata?.shipmentLabelUrl;
+        const linkTraceTraceUrl = transaction?.attributes?.metadata?.linkTraceTraceUrl;
         if (!shipmentLabelUrl) {
           dispatch(getShipmentLabelThunk(transaction.id.uuid));
+        } else {
+          dispatch(setShipmentLabelUrl({ shipmentLabelUrl, linkTraceTraceUrl }));
         }
 
         if (canFetchTimeslots) {
@@ -652,6 +655,7 @@ const initialState = {
   shipmentLabelUrl: null,
   getShipmentLabelInProgress: false,
   getShipmentLabelError: null,
+  linkTraceTraceUrl: null,
 };
 
 // Merge entity arrays using ids, so that conflicting items in newer array (b) overwrite old values (a).
@@ -669,6 +673,10 @@ const transactionPageSlice = createSlice({
   reducers: {
     setInitialValues: (state, action) => {
       return { ...initialState, ...action.payload };
+    },
+    setShipmentLabelUrl: (state, action) => {
+      state.shipmentLabelUrl = action.payload.shipmentLabelUrl;
+      state.linkTraceTraceUrl = action.payload.linkTraceTraceUrl;
     },
   },
   extraReducers: builder => {
@@ -840,6 +848,7 @@ const transactionPageSlice = createSlice({
       .addCase(getShipmentLabelThunk.fulfilled, (state, action) => {
         state.getShipmentLabelInProgress = false;
         state.shipmentLabelUrl = action.payload.data.labelUrl;
+        state.linkTraceTraceUrl = action.payload.data.linkTraceTraceUrl;
       })
       .addCase(getShipmentLabelThunk.rejected, (state, action) => {
         state.getShipmentLabelInProgress = false;
@@ -848,7 +857,7 @@ const transactionPageSlice = createSlice({
   },
 });
 
-export const { setInitialValues } = transactionPageSlice.actions;
+export const { setInitialValues, setShipmentLabelUrl } = transactionPageSlice.actions;
 
 export default transactionPageSlice.reducer;
 

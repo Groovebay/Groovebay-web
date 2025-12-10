@@ -1,4 +1,4 @@
-const { getAddress } = require('../../api-util/common');
+const { getAddress, getFormattedShippingLabelUrl } = require('../../api-util/common');
 const { denormalisedResponseEntities } = require('../../api-util/format');
 const { getIntegrationSdk } = require('../../api-util/sdk');
 const { ShippingServices, TransactionServices } = require('../../services');
@@ -47,11 +47,18 @@ const createShipment = async transaction => {
     };
     const response = await ShippingServices.shipments.create(shipmentData);
     const shipmentId = response?.data?.ids?.[0]?.id;
-    if (shipmentId) {
-      await TransactionServices.updateMetadata(transaction.id, {
+    const pdfUrl = response?.data?.pdf?.url ?? '';
+    const shipmentLabelUrl = getFormattedShippingLabelUrl(pdfUrl);
+    const trackData = await ShippingServices.shipments.track(shipmentId);
+    const linkTraceTraceUrl = trackData?.data?.tracktraces?.[0]?.link_tracktrace;
+    await TransactionServices.updateMetadata(
+      transaction.id.uuid ? transaction.id.uuid : transaction.id,
+      {
         shipmentId,
-      });
-    }
+        ...(shipmentLabelUrl ? { shipmentLabelUrl } : {}),
+        ...(linkTraceTraceUrl ? { linkTraceTraceUrl } : {}),
+      }
+    );
   } catch (error) {
     console.log(
       'Failed to create shipment in confirm payment transition of iDeal',

@@ -11,6 +11,7 @@ const subscribe = async () => {
 
   // MyParcel requires lowercase callback URL and HTTPS
   const callbackUrl = `${rootUrl.replace(/\/$/, '')}/api/webhooks/myparcel`.toLowerCase();
+
   if (!callbackUrl.startsWith('https://')) {
     console.warn('MyParcel requires HTTPS callback URLs; current callback is', callbackUrl);
   }
@@ -19,8 +20,14 @@ const subscribe = async () => {
     const response = await shippingApi.post(
       '/webhook_subscriptions',
       {
-        hook: HOOK_SHIPMENT_LABEL_CREATED,
-        url: callbackUrl,
+        data: {
+          webhook_subscriptions: [
+            {
+              hook: HOOK_SHIPMENT_LABEL_CREATED,
+              url: callbackUrl,
+            },
+          ],
+        },
       },
       {
         headers: {
@@ -29,10 +36,10 @@ const subscribe = async () => {
         },
       }
     );
-    console.log('MyParcel webhook subscribed', response.data);
-    return data;
+    console.log('MyParcel webhook subscribed', response.data.data.ids);
+    return response.data;
   } catch (err) {
-    console.error('Failed to subscribe MyParcel webhook', err.message);
+    console.error('Failed to subscribe MyParcel webhook', err);
     return null;
   }
 };

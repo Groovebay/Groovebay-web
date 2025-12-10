@@ -1,6 +1,12 @@
 const { ShippingServices, TransactionServices } = require('../../services');
 const { getAddress } = require('../../api-util/common');
 const { serialize } = require('../../api-util/sdk');
+const { getFormattedShippingLabelUrl } = require('../../api-util/common');
+/**
+ * Create a shipment
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
 const createShipment = async (req, res) => {
   const { transactionId, sync = true } = req.body;
   const transaction = await TransactionServices.get(transactionId, {
@@ -49,8 +55,14 @@ const createShipment = async (req, res) => {
   const response = await ShippingServices.shipments.create(shipmentData);
   if (sync) {
     const shipmentId = response?.data?.ids?.[0]?.id;
+    const pdfUrl = response?.data?.pdf?.url ?? '';
+    const trackData = await ShippingServices.shipments.track(shipmentId);
+    const linkTraceTraceUrl = trackData?.data?.tracktraces?.[0]?.link_tracktrace;
+    const shipmentLabelUrl = getFormattedShippingLabelUrl(pdfUrl);
     await TransactionServices.updateMetadata(transactionId, {
       shipmentId,
+      ...(shipmentLabelUrl ? { shipmentLabelUrl } : {}),
+      ...(linkTraceTraceUrl ? { linkTraceTraceUrl } : {}),
     });
   }
   res.status(200).send(

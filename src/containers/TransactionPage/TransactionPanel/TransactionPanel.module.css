@@ -547,3 +547,10 @@
     display: none !important;
   }
 }
+
+.shippingLabelLinkContainer {
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  padding-left: 13px;
+}

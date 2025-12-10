@@ -1,7 +1,7 @@
 const { handleError, serialize } = require('../../api-util/sdk');
 const { ShippingServices, TransactionServices } = require('../../services');
 const { validateRequiredFields } = require('../../api-util/common');
-
+const { getFormattedShippingLabelUrl } = require('../../api-util/common');
 /**
  * Get shipping label by ID
  * @param {Object} req - Express request object
@@ -17,13 +17,31 @@ const getShipmentLabel = async (req, res) => {
     const transaction = await TransactionServices.get(transactionId);
     const shipmentId = transaction?.attributes?.metadata?.shipmentId;
 
+    if (!shipmentId) {
+      return res.status(200).send(
+        serialize({
+          status: 200,
+          statusText: 'OK',
+          data: {
+            message: 'No shipment ID found in transaction metadata. Please try again later.',
+            labelUrl: null,
+            linkTraceTraceUrl: null,
+          },
+        })
+      );
+    }
+
     // Fetch shipping label
     const labelData = await ShippingServices.shipments.label(shipmentId);
+    const trackData = await ShippingServices.shipments.track(shipmentId);
+    const linkTraceTraceUrl = trackData?.data?.tracktraces?.[0]?.link_tracktrace;
     const labelUrl = labelData?.data?.pdfs?.url;
+    const formattedLabelUrl = getFormattedShippingLabelUrl(labelUrl);
     if (shouldResyncShippingDetails && labelUrl) {
       // Update transaction metadata with shipping details
       await TransactionServices.updateMetadata(transaction.id.uuid, {
-        shipmentLabelUrl: labelUrl,
+        shipmentLabelUrl: formattedLabelUrl,
+        linkTraceTraceUrl,
       });
     }
 
@@ -35,7 +53,8 @@ const getShipmentLabel = async (req, res) => {
           status: 200,
           statusText: 'OK',
           data: {
-            labelUrl,
+            labelUrl: formattedLabelUrl,
+            linkTraceTraceUrl,
           },
         })
       );

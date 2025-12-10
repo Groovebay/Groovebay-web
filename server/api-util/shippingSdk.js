@@ -1,9 +1,8 @@
 const axios = require('axios');
-
-const BASE_URL = 'https://api.myparcel.nl';
+const { SHIPPING_API_BASE_URL } = require('./common');
 
 const shippingApi = axios.create({
-  baseURL: BASE_URL,
+  baseURL: SHIPPING_API_BASE_URL,
   headers: {
     'x-dmp-feature-flags': 'x-dmp-set-custom-sender',
     'Content-Type': 'application/vnd.shipment+json;charset=utf-8;version=1.1',

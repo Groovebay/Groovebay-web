@@ -640,12 +640,13 @@ export const TransactionPageComponent = props => {
   const isNegotiationProcess = processName === NEGOTIATION_PROCESS_NAME;
   const isRegularNegotiation =
     isNegotiationProcess && transaction?.attributes?.protectedData?.unitType === OFFER;
-  const shipmentLabelUrl = useGetShippingLabel({ txId: transaction?.id, skipPolling: true });
+  const { shipmentLabelUrl, linkTraceTraceUrl } = useGetShippingLabel({ txId: transaction?.id });
 
   // TransactionPanel is presentational component
   // that currently handles showing everything inside layout's main view area.
   const panel = isDataAvailable ? (
     <TransactionPanel
+      linkTraceTraceUrl={linkTraceTraceUrl}
       shipmentLabelUrl={shipmentLabelUrl}
       className={detailsClassName}
       currentUser={currentUser}
