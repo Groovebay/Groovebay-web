@@ -141,6 +141,7 @@ module.exports = async (req, res) => {
       apiResponse = await createStockReservationTransactions({
         tx,
         sdk: trustedSdk,
+        queryParams,
       });
     }
 

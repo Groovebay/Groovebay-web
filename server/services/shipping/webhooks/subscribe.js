@@ -14,6 +14,7 @@ const subscribe = async () => {
 
   if (!callbackUrl.startsWith('https://')) {
     console.warn('MyParcel requires HTTPS callback URLs; current callback is', callbackUrl);
+    return;
   }
 
   try {
