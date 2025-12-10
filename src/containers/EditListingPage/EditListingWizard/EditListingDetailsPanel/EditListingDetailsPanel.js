@@ -401,8 +401,6 @@ const EditListingDetailsPanel = props => {
             } else {
               onSubmit(updateValues);
             }
-
-            onSubmit(updateValues);
           }}
           selectableListingTypes={listingTypes.map(conf => getTransactionInfo([conf], {}, true))}
           hasExistingListingType={hasExistingListingType}
