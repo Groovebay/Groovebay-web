@@ -31,7 +31,9 @@ const SavedShippingAddress = ({
         <div className={css.addressInfo}>
           {phone && <p className={css.phone}>{formatPhoneNumberIntl(phone)}</p>}
           <p className={css.street}>{`${street} ${number ?? ''}`}</p>
-          <p className={css.city}>{`${city}, ${region} ${postal_code}, ${cc}`}</p>
+          <p className={css.city}>{`${city}, ${
+            region ? `${region}, ` : ''
+          } ${postal_code}, ${cc}`}</p>
         </div>
         <PrimaryButton onClick={onEdit} type="button" className={css.changeButton}>
           <FormattedMessage id="SavedShippingAddress.change" />

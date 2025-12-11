@@ -27,6 +27,7 @@ import {
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import { fetchCurrentUserNotifications } from '../../ducks/user.duck';
 import { queryTransactionListingsThunk } from '../CheckoutPage/CheckoutPage.duck';
+import SHIPPING_CARRIERS from '../../util/constants';
 
 const { UUID } = sdkTypes;
 
@@ -282,7 +283,10 @@ const fetchTransactionPayloadCreator = (
 
         const shipmentLabelUrl = transaction?.attributes?.metadata?.shipmentLabelUrl;
         const linkTraceTraceUrl = transaction?.attributes?.metadata?.linkTraceTraceUrl;
-        if (!shipmentLabelUrl) {
+        const isDPD =
+          transaction?.attributes?.protectedData?.shippingRate?.carrier?.id ===
+          SHIPPING_CARRIERS.DPD.id;
+        if (!shipmentLabelUrl || (!isDPD && !linkTraceTraceUrl)) {
           dispatch(getShipmentLabelThunk(transaction.id.uuid));
         } else {
           dispatch(setShipmentLabelUrl({ shipmentLabelUrl, linkTraceTraceUrl }));

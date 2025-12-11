@@ -71,6 +71,7 @@ import {
 import css from './TransactionPage.module.css';
 import { getCurrentUserTypeRoles, hasPermissionToViewData } from '../../util/userHelpers.js';
 import useGetShippingLabel from '../../hooks/useGetShippingLabel.js';
+import SHIPPING_CARRIERS from '../../util/constants.js';
 
 // Submit dispute and close the review modal
 const onDisputeOrder = (
@@ -640,7 +641,15 @@ export const TransactionPageComponent = props => {
   const isNegotiationProcess = processName === NEGOTIATION_PROCESS_NAME;
   const isRegularNegotiation =
     isNegotiationProcess && transaction?.attributes?.protectedData?.unitType === OFFER;
-  const { shipmentLabelUrl, linkTraceTraceUrl } = useGetShippingLabel({ txId: transaction?.id });
+  const protectedData = transaction?.attributes?.protectedData;
+  const isDPD = protectedData?.shippingRate?.carrier?.id === SHIPPING_CARRIERS.DPD.id;
+  const hasShippingLabel = transaction?.attributes?.metadata?.shipmentLabelUrl;
+  const hasTrackTrace = transaction?.attributes?.metadata?.linkTraceTraceUrl;
+  const onlyHasShippingLabel = !!(isDPD && hasShippingLabel && !hasTrackTrace);
+  const { shipmentLabelUrl, linkTraceTraceUrl } = useGetShippingLabel({
+    txId: transaction?.id,
+    skipPolling: onlyHasShippingLabel,
+  });
 
   // TransactionPanel is presentational component
   // that currently handles showing everything inside layout's main view area.

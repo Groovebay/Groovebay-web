@@ -67,9 +67,17 @@ export const ShippingAddressFormComponent = props => {
   });
   const postalCodeRequired = validators.required(requireText);
 
-  const regionLabel = intl.formatMessage({ id: 'ShippingAddressForm.regionLabel' });
-  const regionPlaceholder = intl.formatMessage({ id: 'ShippingAddressForm.regionPlaceholder' });
-  const regionRequired = validators.required(requireText);
+  const optionalText = intl.formatMessage({
+    id: 'ShippingAddressForm.optionalText',
+  });
+
+  const regionLabel = intl.formatMessage(
+    { id: 'ShippingAddressForm.regionLabel' },
+    { optionalText: optionalText }
+  );
+  const regionPlaceholder = intl.formatMessage({
+    id: 'ShippingAddressForm.regionPlaceholder',
+  });
 
   const countryLabel = intl.formatMessage({ id: 'ShippingAddressForm.countryLabel' });
   const countryPlaceholder = intl.formatMessage({ id: 'ShippingAddressForm.countryPlaceholder' });
@@ -194,7 +202,6 @@ export const ShippingAddressFormComponent = props => {
                 type="text"
                 label={regionLabel}
                 placeholder={regionPlaceholder}
-                validate={regionRequired}
                 onUnmount={() => form.change('region', undefined)}
               />
 

@@ -18,7 +18,7 @@ const createShipment = async transaction => {
             reference_identifier: `SHARETRIBE-TRANSACTION-${transaction.id.uuid}`,
             sender: {
               cc: providerAddress.cc,
-              region: providerAddress.region,
+              ...(providerAddress.region ? { region: providerAddress.region } : {}),
               city: providerAddress.city,
               street: providerAddress.street,
               number: providerAddress.number,
@@ -28,7 +28,7 @@ const createShipment = async transaction => {
             },
             recipient: {
               cc: customerAddress.cc,
-              region: customerAddress.region,
+              ...(customerAddress.region ? { region: customerAddress.region } : {}),
               city: customerAddress.city,
               street: customerAddress.street,
               number: customerAddress.number,

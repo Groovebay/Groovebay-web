@@ -1442,9 +1442,9 @@
   "ShippingAddressForm.postalCodeLabel": "Postal code",
   "ShippingAddressForm.postalCodePlaceholder": "Enter your postal code",
   "ShippingAddressForm.postalCodeRequired": "Postal code is required",
-  "ShippingAddressForm.regionLabel": "Region",
+  "ShippingAddressForm.regionLabel": "Region {optionalText}",
+  "ShippingAddressForm.optionalText": "(optional)",
   "ShippingAddressForm.regionPlaceholder": "Enter your region",
-  "ShippingAddressForm.regionRequired": "Region is required",
   "ShippingAddressForm.countryLabel": "Country",
   "ShippingAddressForm.countryPlaceholder": "Select your country",
   "ShippingAddressForm.countryRequired": "Country is required",
@@ -1472,5 +1472,7 @@
   "ShippingMethodForm.customerShippingAddressNotFound": "Customer shipping address not found. Please update your shipping address.",
   "ShippingMethodForm.providerShippingAddressNotFound": "Provider shipping address not found. Please contact to {marketplaceName} support.",
   "TransactionPanel.shippingLabelLink": "Download your shipping label",
-  "TransactionPanel.trackTraceLink": "Track your shipment"
+  "TransactionPanel.trackTraceLink": "Track your shipment",
+  "TransactionPanel.weArePreparingYourShipmentLabelUrl": "We are preparing your shipping label...",
+  "TransactionPanel.weArePreparingYourTrackTraceUrl": "We are preparing your track trace..."
 }

@@ -18,16 +18,8 @@ const useGetShippingRates = ({ tx, currentUser, listing }) => {
   };
 
   const shippingAddress = currentUser?.attributes?.profile?.protectedData?.shippingAddress || {};
-  const { street, city, cc, phone, number, postal_code, region } = shippingAddress;
-  const hasEnoughShippingAddressFields = !!(
-    street &&
-    city &&
-    cc &&
-    phone &&
-    number &&
-    postal_code &&
-    region
-  );
+  const { street, city, cc, phone, number, postal_code } = shippingAddress;
+  const hasEnoughShippingAddressFields = !!(street && city && cc && phone && number && postal_code);
   useEffect(() => {
     if (
       hasEnoughShippingAddressFields &&

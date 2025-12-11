@@ -389,6 +389,7 @@ export class TransactionPanelComponent extends Component {
                   </p>
                 ) : null}
                 <DeliveryInfoMaybe
+                  isProvider={isProvider}
                   shipmentLabelUrl={shipmentLabelUrl}
                   linkTraceTraceUrl={linkTraceTraceUrl}
                   className={css.deliveryInfoSection}
