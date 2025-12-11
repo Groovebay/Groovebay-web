@@ -19,7 +19,7 @@ const useGetShippingLabel = ({ txId, skipPolling = false }) => {
   const errorCountRef = useRef(0);
 
   useEffect(() => {
-    if (transactionUuid && !shipmentLabelUrl && !skipPolling) {
+    if (transactionUuid && (!shipmentLabelUrl || !linkTraceTraceUrl) && !skipPolling) {
       // Clear any existing interval
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -28,7 +28,7 @@ const useGetShippingLabel = ({ txId, skipPolling = false }) => {
       // Start polling for shipping label details
       intervalRef.current = setInterval(async () => {
         // Check if shipping label details are now available
-        const hasEnoughData = !!shipmentLabelUrl;
+        const hasEnoughData = !!shipmentLabelUrl && !!linkTraceTraceUrl;
         if (hasEnoughData) {
           clearInterval(intervalRef.current);
           intervalRef.current = null;
@@ -53,7 +53,7 @@ const useGetShippingLabel = ({ txId, skipPolling = false }) => {
         intervalRef.current = null;
       }
     };
-  }, [transactionUuid, shipmentLabelUrl, dispatch]);
+  }, [transactionUuid, shipmentLabelUrl, linkTraceTraceUrl, dispatch]);
 
   // Return the shipping label URL for convenience
   return { shipmentLabelUrl, linkTraceTraceUrl };

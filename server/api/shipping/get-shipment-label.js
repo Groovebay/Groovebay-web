@@ -16,7 +16,8 @@ const getShipmentLabel = async (req, res) => {
 
     const transaction = await TransactionServices.get(transactionId);
     const shipmentId = transaction?.attributes?.metadata?.shipmentId;
-
+    const shipmentLabelUrl = transaction?.attributes?.metadata?.shipmentLabelUrl;
+    const linkTraceTraceUrl = transaction?.attributes?.metadata?.linkTraceTraceUrl;
     if (!shipmentId) {
       return res.status(200).send(
         serialize({
@@ -32,16 +33,20 @@ const getShipmentLabel = async (req, res) => {
     }
 
     // Fetch shipping label
-    const labelData = await ShippingServices.shipments.label(shipmentId);
-    const trackData = await ShippingServices.shipments.track(shipmentId);
-    const linkTraceTraceUrl = trackData?.data?.tracktraces?.[0]?.link_tracktrace;
+    const labelData = shipmentLabelUrl
+      ? { data: { pdfs: { url: shipmentLabelUrl } } }
+      : await ShippingServices.shipments.label(shipmentId);
+    const trackData = linkTraceTraceUrl
+      ? { data: { tracktraces: [{ link_tracktrace: linkTraceTraceUrl }] } }
+      : await ShippingServices.shipments.track(shipmentId);
+    const newLinkTraceTraceUrl = trackData?.data?.tracktraces?.[0]?.link_tracktrace;
     const labelUrl = labelData?.data?.pdfs?.url;
     const formattedLabelUrl = getFormattedShippingLabelUrl(labelUrl);
     if (shouldResyncShippingDetails && labelUrl) {
       // Update transaction metadata with shipping details
       await TransactionServices.updateMetadata(transaction.id.uuid, {
         shipmentLabelUrl: formattedLabelUrl,
-        linkTraceTraceUrl,
+        linkTraceTraceUrl: newLinkTraceTraceUrl,
       });
     }
 
@@ -54,7 +59,7 @@ const getShipmentLabel = async (req, res) => {
           statusText: 'OK',
           data: {
             labelUrl: formattedLabelUrl,
-            linkTraceTraceUrl,
+            linkTraceTraceUrl: newLinkTraceTraceUrl,
           },
         })
       );

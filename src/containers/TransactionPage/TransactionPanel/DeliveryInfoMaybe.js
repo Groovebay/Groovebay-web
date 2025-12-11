@@ -8,6 +8,7 @@ import { Heading } from '../../../components';
 import AddressLinkMaybe from './AddressLinkMaybe';
 
 import css from './TransactionPanel.module.css';
+import SHIPPING_CARRIERS from '../../../util/constants';
 
 // Functional component as a helper to build ActivityFeed section
 const DeliveryInfoMaybe = props => {
@@ -19,6 +20,7 @@ const DeliveryInfoMaybe = props => {
     locale,
     shipmentLabelUrl,
     linkTraceTraceUrl,
+    isProvider,
   } = props;
   const classes = classNames(rootClassName || css.deliveryInfoContainer, className);
   const deliveryMethod = protectedData?.deliveryMethod;
@@ -43,6 +45,7 @@ const DeliveryInfoMaybe = props => {
       </div>
     );
   } else if (isShipping) {
+    const isDPD = protectedData?.shippingRate?.carrier?.id === SHIPPING_CARRIERS.DPD.id;
     const { name, phoneNumber, address } = protectedData?.shippingDetails || {};
     const { line1, line2, city, postalCode, state, country: countryCode } = address || {};
     const phoneMaybe = !!phoneNumber ? (
@@ -77,22 +80,26 @@ const DeliveryInfoMaybe = props => {
         </div>
 
         <Heading as="h3" rootClassName={css.sectionHeading}>
-          {shipmentLabelUrl ? (
-            <div className={css.shippingLabelLinkContainer}>
+          <div className={css.shippingLabelLinkContainer}>
+            {!isProvider ? null : shipmentLabelUrl ? (
               <a href={shipmentLabelUrl} target="_blank" rel="noopener noreferrer">
                 <FormattedMessage id="TransactionPanel.shippingLabelLink" />
               </a>
-              {linkTraceTraceUrl ? (
-                <a href={linkTraceTraceUrl} target="_blank" rel="noopener noreferrer">
-                  <FormattedMessage id="TransactionPanel.trackTraceLink" />
-                </a>
-              ) : null}
-            </div>
-          ) : (
-            <Heading as="h3" rootClassName={css.sectionHeading}>
-              <FormattedMessage id="TransactionPanel.weArePreparingYourOrder" />
-            </Heading>
-          )}
+            ) : (
+              <Heading as="h3" rootClassName={css.sectionHeading}>
+                <FormattedMessage id="TransactionPanel.weArePreparingYourShipmentLabelUrl" />
+              </Heading>
+            )}
+            {isDPD ? null : linkTraceTraceUrl ? (
+              <a href={linkTraceTraceUrl} target="_blank" rel="noopener noreferrer">
+                <FormattedMessage id="TransactionPanel.trackTraceLink" />
+              </a>
+            ) : (
+              <Heading as="h3" rootClassName={css.sectionHeading}>
+                <FormattedMessage id="TransactionPanel.weArePreparingYourTrackTraceUrl" />
+              </Heading>
+            )}
+          </div>
         </Heading>
       </div>
     );

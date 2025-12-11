@@ -24,7 +24,6 @@ const ShippingDetailsForm = props => {
   const hasEnoughAddressInfo =
     address?.street &&
     address?.city &&
-    address?.region &&
     address?.postal_code &&
     address?.cc &&
     address?.phone &&

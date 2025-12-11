@@ -656,7 +656,6 @@ export const CheckoutPageWithPayment = props => {
   const hasEnoughShippingAddressFields =
     initialValues?.street &&
     initialValues?.city &&
-    initialValues?.region &&
     initialValues?.postal_code &&
     initialValues?.cc &&
     initialValues?.phone &&
