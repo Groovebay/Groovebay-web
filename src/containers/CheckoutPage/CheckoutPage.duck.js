@@ -577,9 +577,9 @@ const checkoutPageSlice = createSlice({
           state.reSpeculateInProgress = true;
         } else {
           state.speculateTransactionInProgress = true;
+          state.speculatedTransaction = null;
         }
         state.speculateTransactionError = null;
-        state.speculatedTransaction = null;
       })
       .addCase(speculateTransactionThunk.fulfilled, (state, action) => {
         // Check that the local devices clock is within a minute from the server

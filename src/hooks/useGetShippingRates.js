@@ -18,25 +18,24 @@ const useGetShippingRates = ({ tx, currentUser, listing }) => {
   };
 
   const shippingAddress = currentUser?.attributes?.profile?.protectedData?.shippingAddress || {};
-  const { street, city, cc, phone, number, postal_code } = shippingAddress;
+  const { street, city, cc, phone, number, postal_code, region } = shippingAddress;
   const hasEnoughShippingAddressFields = !!(street && city && cc && phone && number && postal_code);
   useEffect(() => {
-    if (
-      hasEnoughShippingAddressFields &&
-      providerId &&
-      customerId &&
-      providerCart &&
-      shippingRates?.length === 0
-    ) {
+    if (hasEnoughShippingAddressFields && providerId && customerId && providerCart) {
       onGetShippingRates(providerId, customerId, providerCart);
     }
   }, [
     hasEnoughShippingAddressFields,
     providerId,
     customerId,
-    providerCart,
-    JSON.stringify(shippingRates),
-    JSON.stringify(shippingAddress),
+    JSON.stringify(providerCart),
+    region,
+    phone,
+    number,
+    postal_code,
+    street,
+    city,
+    cc,
   ]);
   return {
     shippingRates,
