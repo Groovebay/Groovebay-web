@@ -283,48 +283,55 @@ const renderForm = formRenderProps => {
 
       <FetchLineItemsError error={fetchLineItemsError} />
 
-      <div className={css.submitButton}>
-        {!hasStock ? null : (
-          <PrimaryButton
-            type="button"
-            inProgress={updateCartInProgress}
-            disabled={updateCartInProgress}
-            onClick={() => {
-              if (!isOwnListing) {
-                setSubmittedValues({ ...values, quantity: Number(values.quantity) });
-              }
-              updateCart({ ...values, quantity: Number(values.quantity) });
-            }}
-            ready={cartReady}
-          >
-            {alreadyInCart && values.quantity === 0 ? (
-              <FormattedMessage id="ProductOrderForm.removeFromCart" />
-            ) : alreadyInCart ? (
-              <FormattedMessage id="ProductOrderForm.updateCart" />
-            ) : (
-              <FormattedMessage id="ProductOrderForm.addToCart" />
-            )}
-          </PrimaryButton>
-        )}
-        <SecondaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
-          {hasStock ? (
-            <FormattedMessage id="ProductOrderForm.ctaButton" />
-          ) : (
-            <FormattedMessage id="ProductOrderForm.ctaButtonNoStock" />
+      {!isOwnListing && (
+        <div className={css.submitButton}>
+          {!hasStock ? null : (
+            <PrimaryButton
+              type="button"
+              inProgress={updateCartInProgress}
+              disabled={updateCartInProgress}
+              onClick={() => {
+                if (!isOwnListing) {
+                  setSubmittedValues({ ...values, quantity: Number(values.quantity) });
+                }
+                updateCart({ ...values, quantity: Number(values.quantity) });
+              }}
+              ready={cartReady}
+            >
+              {alreadyInCart && values.quantity === 0 ? (
+                <FormattedMessage id="ProductOrderForm.removeFromCart" />
+              ) : alreadyInCart ? (
+                <FormattedMessage id="ProductOrderForm.updateCart" />
+              ) : (
+                <FormattedMessage id="ProductOrderForm.addToCart" />
+              )}
+            </PrimaryButton>
           )}
-        </SecondaryButton>
-      </div>
-      <p className={css.finePrint}>
-        {payoutDetailsWarning ? (
-          payoutDetailsWarning
-        ) : hasStock && isOwnListing ? (
-          <FormattedMessage id="ProductOrderForm.ownListing" />
-        ) : hasStock ? (
-          <FormattedMessage id="ProductOrderForm.finePrint" />
-        ) : showContactUser ? (
-          <FormattedMessage id="ProductOrderForm.finePrintNoStock" values={{ contactSellerLink }} />
-        ) : null}
-      </p>
+          <SecondaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
+            {hasStock ? (
+              <FormattedMessage id="ProductOrderForm.ctaButton" />
+            ) : (
+              <FormattedMessage id="ProductOrderForm.ctaButtonNoStock" />
+            )}
+          </SecondaryButton>
+        </div>
+      )}
+      {!isOwnListing && (
+        <p className={css.finePrint}>
+          {payoutDetailsWarning ? (
+            payoutDetailsWarning
+          ) : hasStock && isOwnListing ? (
+            <FormattedMessage id="ProductOrderForm.ownListing" />
+          ) : hasStock ? (
+            <FormattedMessage id="ProductOrderForm.finePrint" />
+          ) : showContactUser ? (
+            <FormattedMessage
+              id="ProductOrderForm.finePrintNoStock"
+              values={{ contactSellerLink }}
+            />
+          ) : null}
+        </p>
+      )}
     </Form>
   );
 };
