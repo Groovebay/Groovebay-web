@@ -17,8 +17,16 @@ import css from './ShippingDetailsForm.module.css';
  * @returns {JSX.Element} - The ShippingAddressForm component.
  */
 const ShippingDetailsForm = props => {
-  const { onSubmit, currentUser, className, onNextStep, disabledNextStep, ...rest } = props;
-  const [showForm, setShowForm] = useState(false);
+  const {
+    onSubmit,
+    currentUser,
+    className,
+    onNextStep,
+    disabledNextStep,
+    defaultShowForm = false,
+    ...rest
+  } = props;
+  const [showForm, setShowForm] = useState(defaultShowForm);
   const address = currentUser?.attributes?.profile?.protectedData?.shippingAddress;
 
   const hasEnoughAddressInfo =

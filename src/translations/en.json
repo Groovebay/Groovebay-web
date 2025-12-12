@@ -1469,10 +1469,11 @@
   "UserFieldPhoneNumber.phoneNumberRequired": "Phone number is required",
   "UserFieldPhoneNumber.phoneNumberInvalid": "Invalid phone number",
   "TransactionPanel.weArePreparingYourOrder": "We are preparing shipping label for your order...",
-  "ShippingMethodForm.customerShippingAddressNotFound": "Customer shipping address not found. Please update your shipping address.",
+  "ShippingMethodForm.customerShippingAddressNotFound": "Customer shipping address not found. Please take back to the previous step and change your shipping address.",
   "ShippingMethodForm.providerShippingAddressNotFound": "Provider shipping address not found. Please contact to {marketplaceName} support.",
   "TransactionPanel.shippingLabelLink": "Download your shipping label",
   "TransactionPanel.trackTraceLink": "Track your shipment",
   "TransactionPanel.weArePreparingYourShipmentLabelUrl": "We are preparing your shipping label...",
-  "TransactionPanel.weArePreparingYourTrackTraceUrl": "We are preparing your track trace..."
+  "TransactionPanel.weArePreparingYourTrackTraceUrl": "We are preparing your track trace...",
+  "ShippingMethodForm.shippingAddressTakeBack": "Update shipping address"
 }

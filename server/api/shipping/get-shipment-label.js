@@ -44,10 +44,14 @@ const getShipmentLabel = async (req, res) => {
     const formattedLabelUrl = getFormattedShippingLabelUrl(labelUrl);
     if (shouldResyncShippingDetails && labelUrl) {
       // Update transaction metadata with shipping details
-      await TransactionServices.updateMetadata(transaction.id.uuid, {
-        shipmentLabelUrl: formattedLabelUrl,
-        linkTraceTraceUrl: newLinkTraceTraceUrl,
-      });
+      try {
+        await TransactionServices.updateMetadata(transaction.id.uuid, {
+          shipmentLabelUrl: formattedLabelUrl,
+          linkTraceTraceUrl: newLinkTraceTraceUrl,
+        });
+      } catch (error) {
+        //empty catch to avoid error
+      }
     }
 
     res

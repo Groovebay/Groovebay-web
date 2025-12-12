@@ -23,7 +23,7 @@ const validateRequiredFields = (body, requiredFields) => {
  * @returns {Object} Address object
  */
 const getAddress = user => {
-  return user.attributes.profile.protectedData.shippingAddress;
+  return user?.attributes?.profile?.protectedData?.shippingAddress ?? {};
 };
 
 const SHIPPING_API_BASE_URL = 'https://api.myparcel.nl';

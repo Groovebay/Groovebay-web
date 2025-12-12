@@ -8,9 +8,16 @@ import { formatMoneyFromNumber } from '../../../util/currency';
 import IconCarrier from '../../../components/IconCarrier/IconCarrier';
 import { useConfiguration } from '../../../context/configurationContext';
 
-const getErrorMessage = (error, marketplaceName) => {
+const getErrorMessage = (error, marketplaceName, onPreviousStep) => {
   if (error.statusText === 'customer_shipping_address_not_found') {
-    return <FormattedMessage id="ShippingMethodForm.customerShippingAddressNotFound" />;
+    return (
+      <div className={css.errorMessageContainer}>
+        <FormattedMessage id="ShippingMethodForm.customerShippingAddressNotFound" />
+        <PrimaryButton type="button" className={css.goBackButton} onClick={onPreviousStep}>
+          <FormattedMessage id="ShippingMethodForm.shippingAddressTakeBack" />
+        </PrimaryButton>
+      </div>
+    );
   }
   if (error.statusText === 'provider_shipping_address_not_found') {
     return (
@@ -41,6 +48,7 @@ const ShippingMethodForm = ({
   onNextStep,
   disabledNextStep,
   getShippingRatesError,
+  onPreviousStep,
 }) => {
   const intl = useIntl();
   const config = useConfiguration();
@@ -54,7 +62,7 @@ const ShippingMethodForm = ({
     <div className={css.ratesContainer}>
       {getShippingRatesError ? (
         <div className={classNames(css.error, css.shippingAddressNotFound)}>
-          {getErrorMessage(getShippingRatesError, marketplaceName)}
+          {getErrorMessage(getShippingRatesError, marketplaceName, onPreviousStep)}
         </div>
       ) : shippingRates.length === 0 ? (
         <div className={css.noRates}>

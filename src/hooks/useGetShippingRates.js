@@ -36,6 +36,7 @@ const useGetShippingRates = ({ tx, currentUser, listing }) => {
     customerId,
     providerCart,
     JSON.stringify(shippingRates),
+    JSON.stringify(shippingAddress),
   ]);
   return {
     shippingRates,

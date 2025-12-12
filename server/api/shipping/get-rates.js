@@ -1,6 +1,7 @@
 const { handleError, serialize, getIntegrationSdk } = require('../../api-util/sdk');
 const { UserServices, ShippingServices } = require('../../services');
 const { validateRequiredFields, getAddress } = require('../../api-util/common');
+const isEmpty = require('lodash/isEmpty');
 
 /**
  * Get shipping rates for a transaction
@@ -23,14 +24,14 @@ const getShippingRates = async (req, res) => {
     const customerAddress = getAddress(customer);
     const providerAddress = getAddress(provider);
     // Validate users have shipping addresses
-    if (!customerAddress) {
+    if (isEmpty(customerAddress)) {
       const error = new Error('Customer does not have a shipping address');
       error.status = 400;
       error.statusText = 'Bad Request';
       throw error;
     }
 
-    if (!providerAddress) {
+    if (isEmpty(providerAddress)) {
       const error = new Error('Provider does not have a shipping address');
       error.status = 400;
       error.statusText = 'Bad Request';
