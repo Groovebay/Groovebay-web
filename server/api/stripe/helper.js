@@ -60,10 +60,7 @@ const createShipment = async transaction => {
       }
     );
   } catch (error) {
-    console.log(
-      'Failed to create shipment in confirm payment transition of iDeal',
-      error.data.errors
-    );
+    console.log('Failed to create shipment in confirm payment transition of iDeal', error);
     return null;
   }
 };
@@ -111,7 +108,7 @@ const confirmPaymentTransition = async data => {
 
     //create shipment for case iDeal
   } catch (error) {
-    console.log('Failed to update confirm payment transition', error.data.errors);
+    console.log('Failed to update confirm payment transition', error);
   }
 };
 
