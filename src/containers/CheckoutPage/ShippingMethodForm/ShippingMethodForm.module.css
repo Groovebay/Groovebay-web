@@ -100,3 +100,14 @@
 .shippingAddressNotFound {
   margin-bottom: 20px;
 }
+
+.errorMessageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goBackButton {
+  margin-top: 10px;
+  max-height: 40px;
+}

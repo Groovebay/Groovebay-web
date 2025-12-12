@@ -459,6 +459,7 @@ export const CheckoutPageWithPayment = props => {
   const [stripe, setStripe] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedShippingRate, setSelectedShippingRate] = useState(null);
+  const [showShippingDetailsForm, setShowShippingDetailsForm] = useState(false);
 
   const {
     scrollingDisabled,
@@ -770,11 +771,16 @@ export const CheckoutPageWithPayment = props => {
                   },
                   {
                     title: intl.formatMessage({ id: 'PaymentForm.title' }),
-                    disabled: false,
+                    disabled: !selectedShippingRate,
                   },
                 ]}
                 currentStep={currentStep}
-                onStepChange={setCurrentStep}
+                onStepChange={step => {
+                  if (step === 1) {
+                    setShowShippingDetailsForm(false);
+                  }
+                  setCurrentStep(step);
+                }}
               >
                 <div className={css.formContainer}>
                   {currentStep === 1 && !alreadyRequestPayment && (
@@ -787,6 +793,7 @@ export const CheckoutPageWithPayment = props => {
                         setCurrentStep(currentStep + 1);
                       }}
                       disabledNextStep={!hasEnoughShippingAddressFields}
+                      defaultShowForm={showShippingDetailsForm}
                     />
                   )}
                   {currentStep === 2 && !alreadyRequestPayment && (
@@ -800,9 +807,13 @@ export const CheckoutPageWithPayment = props => {
                         setCurrentStep(currentStep + 1);
                       }}
                       disabledNextStep={!selectedShippingRate}
+                      onPreviousStep={() => {
+                        setShowShippingDetailsForm(true);
+                        setCurrentStep(currentStep - 1);
+                      }}
                     />
                   )}
-                  {(currentStep === 3 || alreadyRequestPayment) && (
+                  {(currentStep === 3 || alreadyRequestPayment) && selectedShippingRate && (
                     <StripePaymentForm
                       className={css.paymentForm}
                       onSubmit={values =>
