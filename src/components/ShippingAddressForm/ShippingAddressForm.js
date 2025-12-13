@@ -103,7 +103,7 @@ export const ShippingAddressFormComponent = props => {
       onSubmit={async values => {
         const { onSubmit } = props;
         const response = await onSubmit(values);
-        if (response?.payload?.data) {
+        if (response?.payload?.data?.valid) {
           setSubmittedValues(values);
           props.successCallback?.();
         }
@@ -121,6 +121,7 @@ export const ShippingAddressFormComponent = props => {
           submitTitle,
           values,
           showShippingAddressFormError,
+          invalidAddress,
         } = fieldRenderProps;
         const submittedOnce = Object.keys(submittedValues).length > 0;
         const pristineSinceLastSubmit = submittedOnce && isEqual(values, submittedValues);
@@ -130,13 +131,18 @@ export const ShippingAddressFormComponent = props => {
           <Form className={classes} onSubmit={handleSubmit}>
             {showHeading && <H3>{title}</H3>}
 
-            {showShippingAddressFormError && (
-              <p className={css.error}>
-                <FormattedMessage id="ShippingAddressForm.formError" />
-              </p>
-            )}
-
             <div className={css.formRow}>
+              {showShippingAddressFormError && (
+                <p className={css.error}>
+                  <FormattedMessage id="ShippingAddressForm.formError" />
+                </p>
+              )}
+
+              {invalidAddress && (
+                <p className={css.error}>
+                  <FormattedMessage id="ShippingAddressForm.invalidAddress" />
+                </p>
+              )}
               <FieldPhoneNumberWithCountryInput
                 id={`${formId}.phone`}
                 autoComplete="shipping phoneNumber"
@@ -238,7 +244,8 @@ export const ShippingAddressFormComponent = props => {
               className={css.validateButton}
               type="submit"
               inProgress={updateShippingAddressInProgress}
-              ready={pristineSinceLastSubmit}
+              ready={pristineSinceLastSubmit && !invalidAddress}
+              disabled={pristineSinceLastSubmit || updateShippingAddressInProgress}
             >
               {submitTitle ?? validateButton}
             </Button>
@@ -260,6 +267,7 @@ const mapStateToProps = state => {
     updateShippingAddressInProgress,
     updateShippingAddressSuccess,
     updateShippingAddressError,
+    invalidAddress,
   } = state.ShippingAddressForm;
 
   const currentUser = state.user.currentUser;
@@ -271,6 +279,7 @@ const mapStateToProps = state => {
     updateShippingAddressInProgress,
     updateShippingAddressSuccess,
     updateShippingAddressError,
+    invalidAddress,
   };
 };
 

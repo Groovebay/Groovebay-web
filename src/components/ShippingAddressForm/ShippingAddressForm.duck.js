@@ -3,6 +3,7 @@ import get from 'lodash/get';
 import { denormalisedResponseEntities } from '../../util/data';
 import { updateCurrentUserProfileThunk } from '../../ducks/user.duck';
 import { storableError } from '../../util/errors';
+import { validateAddress } from '../../util/api';
 
 // ================ Async Thunks ================ //
 
@@ -44,13 +45,23 @@ export const loadData = () => (dispatch, getState, sdk) => {
 export const updateShippingAddressThunk = createAsyncThunk(
   'ShippingAddressForm/updateShippingAddress',
   async (address, { dispatch }) => {
+    const validateAddressResponse = await validateAddress(address);
+    if (!validateAddressResponse.data.valid) {
+      dispatch(setInvalidAddress(true));
+      return validateAddressResponse;
+    }
     const response = await dispatch(
       updateCurrentUserProfileThunk({
         data: { protectedData: { shippingAddress: address } },
         options: { expand: true },
       })
     ).unwrap();
-    return response;
+    return {
+      data: {
+        valid: true,
+        ...response.data,
+      },
+    };
   },
   {
     serializeError: storableError,
@@ -66,8 +77,13 @@ const shippingAddressFormSlice = createSlice({
     updateShippingAddressInProgress: false,
     updateShippingAddressSuccess: null,
     updateShippingAddressError: null,
+    invalidAddress: false,
   },
-  reducers: {},
+  reducers: {
+    setInvalidAddress: (state, action) => {
+      state.invalidAddress = action.payload;
+    },
+  },
   extraReducers: builder => {
     builder
       // loadData
@@ -81,6 +97,7 @@ const shippingAddressFormSlice = createSlice({
         state.updateShippingAddressInProgress = true;
         state.updateShippingAddressSuccess = null;
         state.updateShippingAddressError = null;
+        state.invalidAddress = false;
       })
       .addCase(updateShippingAddressThunk.fulfilled, state => {
         state.updateShippingAddressInProgress = false;
@@ -92,5 +109,7 @@ const shippingAddressFormSlice = createSlice({
       });
   },
 });
+
+export const { setInvalidAddress } = shippingAddressFormSlice.actions;
 
 export default shippingAddressFormSlice.reducer;

@@ -24,6 +24,8 @@ const ShippingDetailsForm = props => {
     onNextStep,
     disabledNextStep,
     defaultShowForm = false,
+    invalidAddress,
+    updateShippingAddressInProgress,
     ...rest
   } = props;
   const [showForm, setShowForm] = useState(defaultShowForm);
@@ -60,7 +62,7 @@ const ShippingDetailsForm = props => {
 
   return (
     <div className={classNames(css.root, className)}>
-      {address && (
+      {address && !invalidAddress && !updateShippingAddressInProgress && (
         <PrimaryButton
           className={css.useSavedAddressButton}
           type="button"
@@ -71,10 +73,12 @@ const ShippingDetailsForm = props => {
       )}
       <ShippingAddressFormComponent
         initialValues={initialValues}
+        invalidAddress={invalidAddress}
         showHeading={false}
         onSubmit={onSubmit}
         submitTitle={<FormattedMessage id="ShippingDetailsForm.submitTitle" />}
         successCallback={onNextStep}
+        updateShippingAddressInProgress={updateShippingAddressInProgress}
         {...rest}
       />
     </div>
