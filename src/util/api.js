@@ -167,3 +167,7 @@ export const createShipment = body => {
 export const getShipmentLabel = body => {
   return post('/api/shipping/labels', body);
 };
+
+export const validateAddress = body => {
+  return post('/api/shipping/validate-address', body);
+};

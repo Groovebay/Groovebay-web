@@ -651,6 +651,7 @@ export const CheckoutPageWithPayment = props => {
     onUpdateShippingAddress,
     updateShippingAddressInProgress,
     updateShippingAddressError,
+    invalidAddress,
   } = useUpdateShippingAddress();
   const initialValues = currentUser?.attributes?.profile?.protectedData?.shippingAddress;
 
@@ -767,11 +768,11 @@ export const CheckoutPageWithPayment = props => {
                   },
                   {
                     title: intl.formatMessage({ id: 'ShippingMethodForm.title' }),
-                    disabled: !!alreadyRequestPayment,
+                    disabled: !!alreadyRequestPayment || invalidAddress,
                   },
                   {
                     title: intl.formatMessage({ id: 'PaymentForm.title' }),
-                    disabled: !selectedShippingRate,
+                    disabled: !selectedShippingRate || invalidAddress,
                   },
                 ]}
                 currentStep={currentStep}
@@ -792,8 +793,9 @@ export const CheckoutPageWithPayment = props => {
                       onNextStep={() => {
                         setCurrentStep(currentStep + 1);
                       }}
-                      disabledNextStep={!hasEnoughShippingAddressFields}
+                      disabledNextStep={!hasEnoughShippingAddressFields || invalidAddress}
                       defaultShowForm={showShippingDetailsForm}
+                      invalidAddress={invalidAddress}
                     />
                   )}
                   {currentStep === 2 && !alreadyRequestPayment && (

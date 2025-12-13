@@ -1475,5 +1475,6 @@
   "TransactionPanel.trackTraceLink": "Track your shipment",
   "TransactionPanel.weArePreparingYourShipmentLabelUrl": "We are preparing your shipping label...",
   "TransactionPanel.weArePreparingYourTrackTraceUrl": "We are preparing your track trace...",
-  "ShippingMethodForm.shippingAddressTakeBack": "Update shipping address"
+  "ShippingMethodForm.shippingAddressTakeBack": "Update shipping address",
+  "ShippingAddressForm.invalidAddress": "The address you entered is not valid. Please check your address and try again."
 }

@@ -3,9 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 
 const useUpdateShippingAddress = () => {
   const dispatch = useDispatch();
-  const { updateShippingAddressError, updateShippingAddressInProgress } = useSelector(
-    state => state.ShippingAddressForm
-  );
+  const {
+    updateShippingAddressError,
+    updateShippingAddressInProgress,
+    invalidAddress,
+  } = useSelector(state => state.ShippingAddressForm);
 
   const onUpdateShippingAddress = address => {
     return dispatch(updateShippingAddressThunk(address));
@@ -15,6 +17,7 @@ const useUpdateShippingAddress = () => {
     onUpdateShippingAddress,
     updateShippingAddressError,
     updateShippingAddressInProgress,
+    invalidAddress,
   };
 };
 
